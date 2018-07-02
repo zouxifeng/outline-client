@@ -33,7 +33,7 @@ electron-builder \
   --ia32 \
   --publish=never \
   --config.publish.provider=generic \
-  --config.publish.url=https://raw.githubusercontent.com/Jigsaw-Code/outline-releases/master/client/ \
+  --config.publish.url=https://raw.githubusercontent.com/Jigsaw-Code/outline-releases/windows-testers/client/ \
   --win nsis \
   --config.nsis.perMachine=true \
   --config.nsis.include=electron/custom_install_steps.nsh \
