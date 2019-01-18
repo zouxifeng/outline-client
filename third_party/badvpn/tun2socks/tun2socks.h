@@ -50,3 +50,8 @@
 
 // port for dns traffic
  #define UDP_DNS_PORT 53
+
+#ifdef __APPLE__
+extern int start_tun2socks(int argc, char **argv, int tun_fd, int tun_mtu);
+extern void stop_tun2socks(void);
+#endif

@@ -35,6 +35,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#ifdef __APPLE__
+#define IPV6_PKTINFO    IPV6_2292PKTINFO
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #ifdef BADVPN_LINUX
@@ -287,7 +290,7 @@ static void do_send (BDatagram *o)
     
     switch (o->send.local_addr.type) {
         case BADDR_TYPE_IPV4: {
-#ifdef BADVPN_FREEBSD
+#if defined(BADVPN_FREEBSD) && !defined(__APPLE__)
             memset(cmsg, 0, CMSG_SPACE(sizeof(struct in_addr)));
             cmsg->cmsg_level = IPPROTO_IP;
             cmsg->cmsg_type = IP_SENDSRCADDR;

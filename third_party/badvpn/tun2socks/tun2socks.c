@@ -566,7 +566,11 @@ static void tcp_remove(struct tcp_pcb* pcb_list)
 
 #else
 
+#ifdef __APPLE__
+int start_tun2socks (int argc, char **argv, int tun_fd, int tun_mtu)
+#else
 int main (int argc, char **argv)
+#endif
 {
     if (argc <= 0) {
         return 1;
@@ -581,6 +585,11 @@ int main (int argc, char **argv)
         print_help(argv[0]);
         return 1;
     }
+
+    #ifdef __APPLE__
+        options.tun_fd = tun_fd;
+        options.tun_mtu = tun_mtu;
+    #endif
 
     // handle --help and --version
     if (options.help) {
@@ -845,6 +854,13 @@ fail1:
 fail0:
     DebugObjectGlobal_Finish();
 }
+
+#ifdef __APPLE__
+void stop_tun2socks()
+{
+    terminate();
+}
+#endif
 
 void terminate (void)
 {

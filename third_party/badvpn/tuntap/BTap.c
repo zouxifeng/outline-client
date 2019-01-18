@@ -50,14 +50,22 @@
     #include <sys/stat.h>
     #include <sys/socket.h>
     #include <net/if.h>
+#ifndef __APPLE__
     #include <net/if_arp.h>
+#endif
     #ifdef BADVPN_LINUX
         #include <linux/if_tun.h>
     #endif
     #ifdef BADVPN_FREEBSD
+        #ifdef __APPLE__
+            #include <ctype.h>
+            #include <netinet/ip.h>
+            #include <sys/uio.h>
+        #else
         #include <net/if_tun.h>
         #include <net/if_tap.h>
     #endif
+#endif
 #endif
 
 #include <base/BLog.h>
@@ -369,7 +377,7 @@ fail0:
             
             #endif
             
-            #ifdef BADVPN_FREEBSD
+            #if defined(BADVPN_FREEBSD) && !defined(__APPLE__)
             
             if (init_data.dev_type == BTAP_DEV_TUN) {
                 BLog(BLOG_ERROR, "TUN not supported on FreeBSD");
@@ -404,6 +412,7 @@ fail0:
             
             #endif
             
+            #ifndef __APPLE__
             // get MTU
             
             // open dummy socket for ioctls
@@ -429,6 +438,8 @@ fail0:
             }
             
             close(sock);
+
+            #endif
         } break;
         
         default: ASSERT(0);
@@ -477,7 +488,7 @@ int BTap_InitWithFD (BTap *o, BReactor *reactor, int fd, int mtu, BTap_handler_e
 {
     ASSERT(tun == 0 || tun == 1)
 
-    #ifdef BADVPN_LINUX
+    #if defined(BADVPN_LINUX) || defined(__APPLE__)
     o->reactor = reactor;
     o->handler_error = handler_error;
     o->handler_error_user = handler_error_user;
@@ -489,6 +500,12 @@ int BTap_InitWithFD (BTap *o, BReactor *reactor, int fd, int mtu, BTap_handler_e
     // ===== /OUTLINE =====
 
     // TODO: use BTap_Init2? Still some different behavior (we don't want the fcntl block; we do want close to be called)
+    #ifdef __APPLE__
+    if (fcntl(o->fd, F_SETFL, O_NONBLOCK) < 0) {
+        BLog(BLOG_ERROR, "cannot set non-blocking");
+        goto fail1;
+    }
+    #endif
 
     // The following is identical to BTap_Init...
 

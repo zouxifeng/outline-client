@@ -69,6 +69,27 @@ struct _BTime_global {
     #endif
 };
 
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
+static int gettime(struct timespec *ts) {
+// macOS (< 10.12) and iOS (< 10) do not have clock_gettime, use clock_get_time
+#ifdef __MACH__
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    clock_get_time(cclock, &mts);
+    mach_port_deallocate(mach_task_self(), cclock);
+    ts->tv_sec = mts.tv_sec;
+    ts->tv_nsec = mts.tv_nsec;
+    return 0;
+#else
+    return clock_gettime(CLOCK_MONOTONIC, ts)
+#endif
+}
+
 extern struct _BTime_global btime_global;
 
 static void BTime_Init (void)
@@ -86,7 +107,7 @@ static void BTime_Init (void)
     #else
     
     struct timespec ts;
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) < 0) {
+    if (gettime(&ts) < 0) {
         BLog(BLOG_WARNING, "CLOCK_MONOTONIC is not available. Timers will be confused by clock changes.");
         
         struct timeval tv;
@@ -130,7 +151,7 @@ static btime_t btime_gettime (void)
         return ((int64_t)tv.tv_sec * 1000 + (int64_t)tv.tv_usec/1000);
     } else {
         struct timespec ts;
-        ASSERT_FORCE(clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+        ASSERT_FORCE(gettime(&ts) == 0)
         return (((int64_t)ts.tv_sec * 1000 + (int64_t)ts.tv_nsec/1000000) - btime_global.start_time);
     }
     

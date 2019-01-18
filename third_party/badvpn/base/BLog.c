@@ -33,6 +33,9 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#ifdef __APPLE__
+#include <Foundation/Foundation.h>
+#endif
 
 #include "BLog.h"
 
@@ -55,12 +58,20 @@ static char *level_names[] = { NULL, "ERROR", "WARNING", "NOTICE", "INFO", "DEBU
 
 static void stdout_log (int channel, int level, const char *msg)
 {
+    #ifdef __APPLE__
+    NSLog(@"%s(%s): %s\n", level_names[level], blog_global.channels[channel].name, msg);
+    #else
     fprintf(stdout, "%s(%s): %s\n", level_names[level], blog_global.channels[channel].name, msg);
+    #endif
 }
 
 static void stderr_log (int channel, int level, const char *msg)
 {
+    #ifdef __APPLE__
+    NSLog(@"%s(%s): %s\n", level_names[level], blog_global.channels[channel].name, msg);
+    #else
     fprintf(stderr, "%s(%s): %s\n", level_names[level], blog_global.channels[channel].name, msg);
+    #endif
 }
 
 static void stdout_stderr_free (void)
@@ -98,4 +109,3 @@ void BLog_InitPsiphon (void)
 
 #endif
 // ==== PSIPHON ====
-
