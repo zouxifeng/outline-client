@@ -122,7 +122,13 @@ if (NOT (INT_SIZE GREATER "3"))
     message(FATAL_ERROR "int must be at least 32 bits")
 endif ()
 
-check_type_size(size_t SIZE_SIZE)
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(SIZE_SIZE "${CMAKE_SIZEOF_VOID_P}")
+else ()
+    # Workaround for iOS.
+    check_type_size(size_t SIZE_SIZE)
+endif ()
+
 if (NOT (SIZE_SIZE GREATER INT_SIZE OR SIZE_SIZE EQUAL INT_SIZE))
     message(FATAL_ERROR "size_t must be greater or equal than int")
 endif ()
