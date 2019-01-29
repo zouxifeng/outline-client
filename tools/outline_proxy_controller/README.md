@@ -59,10 +59,9 @@ Contains the main function which makes instances of ControllerConfig and Outline
   starts a simple listener server which accepts connection and make a session object for each of them.
    
  * session
-  takes care of reading and writing from a single connection on the unix socket. Furthermore, it checks the validity of the commands written in the socket as json snippets. Finally its interprets the command and calls the appropriate public method from OutlineProxyController class. Currently three commands are supported:
+  takes care of reading and writing from a single connection on the unix socket. Furthermore, it checks the validity of the commands written in the socket as json snippets. Finally its interprets the command and calls the appropriate public method from OutlineProxyController class. Currently two commands are supported:
     - CONFIGURE_ROUTING: Routing through Outline proxy
     - RESET_ROUTING: Routing through the initial gateway which was in used instead of sending the traffic through outline.
-    - GET_DEVICE_NAME: writing the name of tune device used by outline proxy controller
  
 * outline_proxy_controller.cpp
   Contains the implementation of OutlineProxyController class.

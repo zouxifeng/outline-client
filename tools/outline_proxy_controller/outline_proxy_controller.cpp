@@ -595,8 +595,6 @@ OutputAndStatus OutlineProxyController::executeIPAddress(const SubCommand args) 
   return executeCommand(IPAddressCommand, args);
 }
 
-std::string OutlineProxyController::getTunDeviceName() { return tunInterfaceName; }
-
 OutlineProxyController::~OutlineProxyController() {
   if (routingStatus == ROUTING_THROUGH_OUTLINE) routeDirectly();
   deleteOutlineTunDev();

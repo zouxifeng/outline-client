@@ -52,13 +52,6 @@ class OutlineProxyController {
    */
   void routeDirectly();
 
-  /**
-   *
-   * Returns the name of the tun device to be used by the app
-   *
-   */
-  std::string getTunDeviceName();
-
  private:
   // this enum is representing different stage of outing and "de"routing
   // through outline proxy server. And is used for exmaple in undoing

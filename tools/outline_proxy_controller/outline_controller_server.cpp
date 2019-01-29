@@ -125,9 +125,6 @@ std::tuple<int, std::string, std::string> session::runClientCommand(std::string 
     outlineProxyController_->routeDirectly();
     std::cout << "Reset Routing done" << std::endl;
     return std::make_tuple(SUCCESS, "", action);
-  } else if (action == GET_DEVICE_NAME) {
-    std::cout << "Reset Routing done" << std::endl;
-    return std::make_tuple(SUCCESS, outlineProxyController_->getTunDeviceName(), action);
   } else {
     std::cerr << "Invalid action specified in JSON (" << action << ")" << std::endl;
   }

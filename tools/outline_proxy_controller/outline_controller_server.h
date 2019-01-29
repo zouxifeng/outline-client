@@ -40,7 +40,6 @@ namespace outline {
 // Routing commands from App
 const std::string CONFIGURE_ROUTING = "configureRouting";
 const std::string RESET_ROUTING = "resetRouting";
-const std::string GET_DEVICE_NAME = "getDeviceName";
 
 // Error codes to communicate back to the app
 const int SUCCESS = 0;
