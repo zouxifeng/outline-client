@@ -22,10 +22,13 @@ yarn do src/electron/package_common
 
 scripts/environment_json.sh -r -p linux > www/environment.json
 
+# See package_linux_action.sh for an explanation of the desktopName option.
+
 electron-builder \
   --linux \
   --publish never \
   --config src/electron/electron-builder.json \
   --config.extraMetadata.version=$(scripts/semantic_version.sh -p linux) \
+  --config.extraMetadata.desktopName=appimagekit-outline-client.desktop \
   --config.publish.provider=generic \
   --config.publish.url=https://raw.githubusercontent.com/Jigsaw-Code/outline-releases/master/client/

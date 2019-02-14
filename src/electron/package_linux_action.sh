@@ -16,8 +16,16 @@
 
 yarn do src/electron/package_common
 
+# desktopName is required for setAsDefaultProtocolClient to succeed. It must match the name of the
+# .desktop file added when the user chooses to "integrate" the AppImage with their system (typically
+# it's placed in ~/.local/share/applications).
+#
+# Set this - very lightly documented - option here rather than in package.json because it is so
+# Linux-specific (it unfortunately *cannot* be set in electron-builder.json).
+
 electron-builder \
   --linux \
   --publish never \
   --config src/electron/electron-builder.json \
-  --config.extraMetadata.version=$(scripts/semantic_version.sh -p dev)
+  --config.extraMetadata.version=$(scripts/semantic_version.sh -p dev) \
+  --config.extraMetadata.desktopName=appimagekit-outline-client.desktop

@@ -183,7 +183,18 @@ if (isSecondInstance) {
   quitApp();
 }
 
-app.setAsDefaultProtocolClient('ss');
+// A few things need to happen for this to succeed on Linux:
+//  - Place the .AppImage file/binary in your PATH.
+//  - When prompted, "integrate" the AppImage with your system.
+//  - After first run, remove the surrounding double quotes from the "Exec=" line in the
+//    application's .desktop file. Typically, this will be placed by AppImage at
+//    ~/.local/share/applications/appimagekit-outline-client.desktop.
+//
+// The last point is a bug in electron-builder:
+// https://github.com/electron-userland/electron-builder/issues/2759#issuecomment-463806906
+if (!app.setAsDefaultProtocolClient('ss')) {
+  console.error('could not set ourselves as the ss:// handler');
+}
 
 function interceptShadowsocksLink(argv: string[]) {
   if (argv.length > 1) {
