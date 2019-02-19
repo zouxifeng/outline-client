@@ -16,8 +16,8 @@
 #include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <netdb.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/un.h>
 #import "Shadowsocks.h"
 #import "ShadowsocksConnectivity.h"
@@ -79,11 +79,11 @@ static NSDictionary *kVpnSubnetCandidates;  // Subnets to bind the VPN.
 
   _connectionStore = [[OutlineConnectionStore alloc] initWithAppGroup:appGroup];
   kVpnSubnetCandidates = @{
-                           @"10" : @"10.111.222.0",
-                           @"172" : @"172.16.9.1",
-                           @"192" : @"192.168.20.1",
-                           @"169" : @"169.254.19.0"
-                           };
+    @"10" : @"10.111.222.0",
+    @"172" : @"172.16.9.1",
+    @"192" : @"192.168.20.1",
+    @"169" : @"169.254.19.0"
+  };
   return self;
 }
 
@@ -93,16 +93,16 @@ static NSDictionary *kVpnSubnetCandidates;  // Subnets to bind the VPN.
   if (options == nil) {
     DDLogWarn(@"Received a connect request from preferences");
     NSString *msg = NSLocalizedStringWithDefaultValue(
-                                                      @"vpn-connect", @"Outline", [NSBundle mainBundle],
-                                                      @"Please use the Outline app to connect.",
-                                                      @"Message shown in a system dialog when the user attempts to connect from settings");
+        @"vpn-connect", @"Outline", [NSBundle mainBundle],
+        @"Please use the Outline app to connect.",
+        @"Message shown in a system dialog when the user attempts to connect from settings");
     [self displayMessage:msg
-       completionHandler:^(BOOL success) {
-         completionHandler([NSError errorWithDomain:NEVPNErrorDomain
-                                               code:NEVPNErrorConfigurationDisabled
-                                           userInfo:nil]);
-         exit(0);
-       }];
+        completionHandler:^(BOOL success) {
+          completionHandler([NSError errorWithDomain:NEVPNErrorDomain
+                                                code:NEVPNErrorConfigurationDisabled
+                                            userInfo:nil]);
+          exit(0);
+        }];
     return;
   }
   OutlineConnection *connection = [self retrieveConnection:options];
@@ -132,44 +132,44 @@ static NSDictionary *kVpnSubnetCandidates;  // Subnets to bind the VPN.
   // still be unusable, but at least the user will have a visual indication that Outline is the
   // culprit and can explicitly disconnect.
   [self.shadowsocks
-   startWithConnectivityChecks:!isOnDemand
-   completion:^(ErrorCode errorCode) {
-     ErrorCode clientErrorCode =
-     (errorCode == noError || errorCode == udpRelayNotEnabled) ? noError
-     : errorCode;
-     if (clientErrorCode == noError) {
-       [self connectTunnel:[self getTunnelNetworkSettings]
-                completion:^(NSError *error) {
-                  if (!error) {
-                    BOOL isUdpSupported =
-                    isOnDemand ? self.connectionStore.isUdpSupported
-                    : errorCode == noError;
-                    [self startTun2Socks];
-                    [self execAppCallbackForAction:kActionStart
-                                         errorCode:noError];
+      startWithConnectivityChecks:!isOnDemand
+                       completion:^(ErrorCode errorCode) {
+                         ErrorCode clientErrorCode =
+                             (errorCode == noError || errorCode == udpRelayNotEnabled) ? noError
+                                                                                       : errorCode;
+                         if (clientErrorCode == noError) {
+                           [self connectTunnel:[self getTunnelNetworkSettings]
+                                    completion:^(NSError *error) {
+                                      if (!error) {
+                                        BOOL isUdpSupported =
+                                            isOnDemand ? self.connectionStore.isUdpSupported
+                                                       : errorCode == noError;
+                                        [self startTun2Socks];
+                                        [self execAppCallbackForAction:kActionStart
+                                                             errorCode:noError];
 
-                    // Listen for network changes.
-                    [self addObserver:self
-                           forKeyPath:kDefaultPathKey
-                              options:0
-                              context:nil];
+                                        // Listen for network changes.
+                                        [self addObserver:self
+                                               forKeyPath:kDefaultPathKey
+                                                  options:0
+                                                  context:nil];
 
-                    [self.connectionStore save:connection];
-                    self.connectionStore.isUdpSupported = isUdpSupported;
-                    self.connectionStore.status = ConnectionStatusConnected;
-                  } else {
-                    [self execAppCallbackForAction:kActionStart
-                                         errorCode:vpnPermissionNotGranted];
-                  }
-                  completionHandler(error);
-                }];
-     } else {
-       [self execAppCallbackForAction:kActionStart errorCode:clientErrorCode];
-       completionHandler([NSError errorWithDomain:NEVPNErrorDomain
-                                             code:NEVPNErrorConnectionFailed
-                                         userInfo:nil]);
-     }
-   }];
+                                        [self.connectionStore save:connection];
+                                        self.connectionStore.isUdpSupported = isUdpSupported;
+                                        self.connectionStore.status = ConnectionStatusConnected;
+                                      } else {
+                                        [self execAppCallbackForAction:kActionStart
+                                                             errorCode:vpnPermissionNotGranted];
+                                      }
+                                      completionHandler(error);
+                                    }];
+                         } else {
+                           [self execAppCallbackForAction:kActionStart errorCode:clientErrorCode];
+                           completionHandler([NSError errorWithDomain:NEVPNErrorDomain
+                                                                 code:NEVPNErrorConnectionFailed
+                                                             userInfo:nil]);
+                         }
+                       }];
 }
 
 - (void)stopTunnelWithReason:(NEProviderStopReason)reason
@@ -251,14 +251,14 @@ static NSDictionary *kVpnSubnetCandidates;  // Subnets to bind the VPN.
     // the completion block gets deallocated and system sends a nil response.
     self.ssConnectivity = [[ShadowsocksConnectivity alloc] initWithPort:kShadowsocksLocalPort];
     [self.ssConnectivity
-     isReachable:[self getNetworkIpAddress:(const char *)[host UTF8String]]
-     port:[port intValue]
-     completion:^(BOOL isReachable) {
-       ErrorCode errorCode = isReachable ? noError : serverUnreachable;
-       NSDictionary *response = @{kMessageKeyErrorCode : [NSNumber numberWithLong:errorCode]};
-       completionHandler(
-                         [NSJSONSerialization dataWithJSONObject:response options:kNilOptions error:nil]);
-     }];
+        isReachable:[self getNetworkIpAddress:(const char *)[host UTF8String]]
+               port:[port intValue]
+         completion:^(BOOL isReachable) {
+           ErrorCode errorCode = isReachable ? noError : serverUnreachable;
+           NSDictionary *response = @{kMessageKeyErrorCode : [NSNumber numberWithLong:errorCode]};
+           completionHandler(
+               [NSJSONSerialization dataWithJSONObject:response options:kNilOptions error:nil]);
+         }];
   }
 }
 
@@ -300,8 +300,8 @@ static NSDictionary *kVpnSubnetCandidates;  // Subnets to bind the VPN.
 
 - (NEPacketTunnelNetworkSettings *) getTunnelNetworkSettings {
   NSString *vpnAddress = [self selectVpnAddress];
-  NEIPv4Settings *ipv4Settings = 
-  [[NEIPv4Settings alloc] initWithAddresses:@[ vpnAddress ] subnetMasks:@[ @"255.255.255.0" ]];
+  NEIPv4Settings *ipv4Settings =
+      [[NEIPv4Settings alloc] initWithAddresses:@[ vpnAddress ] subnetMasks:@[ @"255.255.255.0" ]];
   ipv4Settings.includedRoutes = @[[NEIPv4Route defaultRoute]];
   ipv4Settings.excludedRoutes = [self getExcludedIpv4Routes];
 
@@ -313,7 +313,7 @@ static NSDictionary *kVpnSubnetCandidates;  // Subnets to bind the VPN.
 
   // The remote address is not used for routing, but for display in Settings > VPN > Outline.
   NEPacketTunnelNetworkSettings *settings =
-  [[NEPacketTunnelNetworkSettings alloc] initWithTunnelRemoteAddress:self.hostNetworkAddress];
+      [[NEPacketTunnelNetworkSettings alloc] initWithTunnelRemoteAddress:self.hostNetworkAddress];
   settings.IPv4Settings = ipv4Settings;
   settings.IPv6Settings = ipv6Settings;
   // Configure with OpenDNS and Dyn DNS resolver addresses.
@@ -326,7 +326,7 @@ static NSDictionary *kVpnSubnetCandidates;  // Subnets to bind the VPN.
   NSMutableArray *excludedIpv4Routes = [[NSMutableArray alloc] init];
   for (Subnet *subnet in [Subnet getReservedSubnets]) {
     NEIPv4Route *route =
-    [[NEIPv4Route alloc] initWithDestinationAddress:subnet.address subnetMask:subnet.mask];
+        [[NEIPv4Route alloc] initWithDestinationAddress:subnet.address subnetMask:subnet.mask];
     [excludedIpv4Routes addObject:route];
   }
   return excludedIpv4Routes;
@@ -354,12 +354,12 @@ static NSDictionary *kVpnSubnetCandidates;  // Subnets to bind the VPN.
     DDLogInfo(@"Reconnecting tunnel.");
     // TODO: implement TCP fallback for DNS in tun2socks-go.
     // Check whether UDP support has changed with the network.
-//    ShadowsocksConnectivity *ssConnectivity =
-//    [[ShadowsocksConnectivity alloc] initWithPort:kShadowsocksLocalPort];
-//    [ssConnectivity isUdpForwardingEnabled:^(BOOL isUdpSupported) {
-//      DDLogDebug(@"UDP support: %d -> %d", self.connectionStore.isUdpSupported, isUdpSupported);
-//      self.connectionStore.isUdpSupported = isUdpSupported;
-//    }];
+    //    ShadowsocksConnectivity *ssConnectivity =
+    //    [[ShadowsocksConnectivity alloc] initWithPort:kShadowsocksLocalPort];
+    //    [ssConnectivity isUdpForwardingEnabled:^(BOOL isUdpSupported) {
+    //      DDLogDebug(@"UDP support: %d -> %d", self.connectionStore.isUdpSupported,
+    //      isUdpSupported); self.connectionStore.isUdpSupported = isUdpSupported;
+    //    }];
     [self restartShadowsocks:false];
     [self connectTunnel:[self getTunnelNetworkSettings] completion:^(NSError * _Nullable error) {
       if (error != nil) {
@@ -437,7 +437,7 @@ bool getIpAddressString(const struct sockaddr *sa, char *s, socklen_t maxbytes) 
     if (interface->ifa_addr->sa_family == AF_INET) {
       // Only consider IPv4 interfaces.
       NSString *address = [NSString
-                           stringWithUTF8String:inet_ntoa(((struct sockaddr_in *)interface->ifa_addr)->sin_addr)];
+          stringWithUTF8String:inet_ntoa(((struct sockaddr_in *)interface->ifa_addr)->sin_addr)];
       [addresses addObject:address];
     }
     interface = interface->ifa_next;
@@ -451,7 +451,7 @@ bool getIpAddressString(const struct sockaddr *sa, char *s, socklen_t maxbytes) 
 // the subnets assigned to the existing network interfaces.
 - (NSString *)selectVpnAddress {
   NSMutableDictionary *candidates =
-  [[NSMutableDictionary alloc] initWithDictionary:kVpnSubnetCandidates];
+      [[NSMutableDictionary alloc] initWithDictionary:kVpnSubnetCandidates];
   for (NSString *address in [self getNetworkInterfaceAddresses]) {
     for (NSString *subnetPrefix in kVpnSubnetCandidates) {
       if ([address hasPrefix:subnetPrefix]) {
@@ -497,24 +497,24 @@ bool getIpAddressString(const struct sockaddr *sa, char *s, socklen_t maxbytes) 
       self.shadowsocks.config = [self getShadowsocksNetworkConfig];
       __weak PacketTunnelProvider *weakSelf = self;
       [self.shadowsocks
-       startWithConnectivityChecks:true
-       completion:^(ErrorCode errorCode) {
-         ErrorCode clientErrorCode =
-         errorCode == noError || errorCode == udpRelayNotEnabled
-         ? noError
-         : errorCode;
-         [weakSelf execAppCallbackForAction:kActionStart
-                                  errorCode:clientErrorCode];
-         if (clientErrorCode != noError) {
-           DDLogWarn(@"Tearing down VPN");
-           [self cancelTunnelWithError:
-            [NSError errorWithDomain:NEVPNErrorDomain
-                                code:NEVPNErrorConnectionFailed
-                            userInfo:nil]];
-           return;
-         }
-         [weakSelf.connectionStore save:self.connection];
-       }];
+          startWithConnectivityChecks:true
+                           completion:^(ErrorCode errorCode) {
+                             ErrorCode clientErrorCode =
+                                 errorCode == noError || errorCode == udpRelayNotEnabled
+                                     ? noError
+                                     : errorCode;
+                             [weakSelf execAppCallbackForAction:kActionStart
+                                                      errorCode:clientErrorCode];
+                             if (clientErrorCode != noError) {
+                               DDLogWarn(@"Tearing down VPN");
+                               [self cancelTunnelWithError:
+                                         [NSError errorWithDomain:NEVPNErrorDomain
+                                                             code:NEVPNErrorConnectionFailed
+                                                         userInfo:nil]];
+                               return;
+                             }
+                             [weakSelf.connectionStore save:self.connection];
+                           }];
     }];
   }
 }
@@ -554,42 +554,51 @@ bool getIpAddressString(const struct sockaddr *sa, char *s, socklen_t maxbytes) 
     return;
   };
   // Bind socket to inbound address, acting as a server.
-  if (bind(self.sockFd, (struct sockaddr *)self.inboundSockAddr, sizeof(struct sockaddr_un)) == -1) {
+  if (bind(self.sockFd, (struct sockaddr *)self.inboundSockAddr, sizeof(struct sockaddr_un)) ==
+      -1) {
     DDLogError(@"Failed to bind to Unix socket: %s", strerror(errno));
     return;
   }
 
   DDLogInfo(@"Launching tun2socks...");
-  NSString *execPath = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"go-tun2socks-macos"];
+  NSString *execPath =
+      [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"go-tun2socks-macos"];
   NSTask *task = [[NSTask alloc] init];
   NSPipe *out = [NSPipe pipe];
   [task setStandardOutput:out];
-  [task setLaunchPath: execPath];
+  [task setLaunchPath:execPath];
   // Reverse in/out socket paths.
-  [task setArguments:@[@"-proxyHost", @"127.0.0.1", @"-proxyPort", [NSString stringWithFormat:@"%d", kShadowsocksLocalPort] ,@"-inboundSocketPath", outboundSocketPath, @"-outboundSocketPath", inboundSocketPath]];
+  [task setArguments:@[
+    @"-proxyHost", @"127.0.0.1", @"-proxyPort",
+    [NSString stringWithFormat:@"%d", kShadowsocksLocalPort], @"-inboundSocketPath",
+    outboundSocketPath, @"-outboundSocketPath", inboundSocketPath
+  ]];
   [task launch];
 
   [PacketTunnelProvider dispatchBlock:^{
     [NSThread detachNewThreadSelector:@selector(processOutboundPackets)
                              toTarget:self
                            withObject:nil];
-  } withDelay:1.0];
+  }
+                            withDelay:1.0];
   [PacketTunnelProvider dispatchBlock:^{
     [NSThread detachNewThreadSelector:@selector(processInboundPackets)
                              toTarget:self
                            withObject:nil];
-  } withDelay:0.1];
-
+  }
+                            withDelay:0.1];
 }
 
 // Reads packets from the VPN and sends them to tun2socks through a Unix socket.
 - (void)processOutboundPackets {
   __weak typeof(self) weakSelf = self;
-  [weakSelf.packetFlow readPacketsWithCompletionHandler:^(NSArray<NSData *> * _Nonnull packets, NSArray<NSNumber *> * _Nonnull protocols) {
+  [weakSelf.packetFlow readPacketsWithCompletionHandler:^(NSArray<NSData *> *_Nonnull packets,
+                                                          NSArray<NSNumber *> *_Nonnull protocols) {
     for (NSData *packet in packets) {
-      if (sendto(weakSelf.sockFd, packet.bytes, packet.length, 0, (struct sockaddr *)self.outboundSockAddr, sizeof(struct sockaddr_un)) == -1) {
+      if (sendto(weakSelf.sockFd, packet.bytes, packet.length, 0,
+                 (struct sockaddr *)self.outboundSockAddr, sizeof(struct sockaddr_un)) == -1) {
         NSLog(@"Failed to write data to tun2socks: (%d) %s", errno, strerror(errno));
-        [NSThread sleepForTimeInterval:2.0]; // Throttle
+        [NSThread sleepForTimeInterval:2.0];  // Throttle
       };
     }
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -603,16 +612,18 @@ bool getIpAddressString(const struct sockaddr *sa, char *s, socklen_t maxbytes) 
   static const int kMtu = 1500;
   uint8_t buffer[kMtu];
   ssize_t bytesRead;
-  NSArray *kPacketProtocols = @[@(AF_INET)];
+  NSArray *kPacketProtocols = @[ @(AF_INET) ];
   while ((bytesRead = recv(self.sockFd, buffer, kMtu, 0)) != -1) {
     @autoreleasepool {
       // Autorelease pool will release memory on every iteration. Since the buffer is on the stack,
       // pass a custom noop deallocator; otherwise `initWithBytesNoCopy` assumes the buffer has been
       // malloc'ed and will attempt to free it. Without autorelease, memory is only freed after the
       // loop breaks, which happens when the process exits.
-      NSData *data = [[NSData alloc] initWithBytesNoCopy:buffer length:bytesRead deallocator:^(void * _Nonnull bytes, NSUInteger length) {}];
-      [self.packetFlow writePackets:@[data] withProtocols:kPacketProtocols];
-
+      NSData *data = [[NSData alloc] initWithBytesNoCopy:buffer
+                                                  length:bytesRead
+                                             deallocator:^(void *_Nonnull bytes, NSUInteger length){
+                                             }];
+      [self.packetFlow writePackets:@[ data ] withProtocols:kPacketProtocols];
     }
   }
   DDLogError(@"Read inbound packets failed: %s", strerror(errno));
@@ -622,7 +633,8 @@ bool getIpAddressString(const struct sockaddr *sa, char *s, socklen_t maxbytes) 
 - (void)waitForTask:(NSTask *)task {
   [task waitUntilExit];
   NSData *outData = [[task.standardOutput fileHandleForReading] readDataToEndOfFile];
-  NSLog(@"RET %d, %@", task.terminationStatus,  [[NSString alloc] initWithData:outData encoding:NSUTF8StringEncoding]);
+  NSLog(@"RET %d, %@", task.terminationStatus,
+        [[NSString alloc] initWithData:outData encoding:NSUTF8StringEncoding]);
 }
 
 - (struct sockaddr_un *)makeUnixAddress:(NSString *)path {
