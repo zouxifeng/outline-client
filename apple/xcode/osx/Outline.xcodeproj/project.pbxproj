@@ -22,13 +22,15 @@
 		737FCE3329B34151A67331B4 /* OutlinePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA09EA80E0C54DFFB24A1810 /* OutlinePlugin.swift */; };
 		7536DC53ADCD48E08CE24B94 /* CDVDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = 512326387AA5498389C6B4BA /* CDVDevice.m */; };
 		7A5BA083B0B5480CA037B818 /* vpn in Resources */ = {isa = PBXBuildFile; fileRef = D83B939D01CF4540A9A3DF86 /* vpn */; };
-		7C38CF57F8B548379A15F2AB /* PacketProcessor_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3679D25B96374CD5BE52C04F /* PacketProcessor_macOS.framework */; };
 		DBBA975361C94599B9DD3891 /* CDVClipboard.m in Sources */ = {isa = PBXBuildFile; fileRef = 469466FF1BDB44C081741BF5 /* CDVClipboard.m */; };
 		EAD11960A27C45AFA5E46584 /* Outline-Bridging-Header.h in Resources */ = {isa = PBXBuildFile; fileRef = A508014170A1492DB0D800B3 /* Outline-Bridging-Header.h */; };
 		FC0799E92037532A00A1C822 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0799E82037532A00A1C822 /* AppDelegate.swift */; };
 		FC0799F02037532A00A1C822 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FC0799EE2037532A00A1C822 /* Main.storyboard */; };
 		FC0799F72037543F00A1C822 /* OutlineLauncher.app in Copy OutlineLauncher */ = {isa = PBXBuildFile; fileRef = FC0799E62037532900A1C822 /* OutlineLauncher.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FC0799F92037545D00A1C822 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC0799F82037545D00A1C822 /* ServiceManagement.framework */; };
+		FC08FD4022148EC600520ECD /* go-tun2socks-macos in Resources */ = {isa = PBXBuildFile; fileRef = FC08FD3F22148EC600520ECD /* go-tun2socks-macos */; };
+		FC08FD4122148EC600520ECD /* go-tun2socks-macos in Resources */ = {isa = PBXBuildFile; fileRef = FC08FD3F22148EC600520ECD /* go-tun2socks-macos */; };
+		FC08FD432214952F00520ECD /* go-tun2socks-macos in CopyFiles */ = {isa = PBXBuildFile; fileRef = FC08FD3F22148EC600520ECD /* go-tun2socks-macos */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		FC0FFD701FCDBE4E00EB0129 /* Shadowsocks_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FCAFD3131FBA52690057EE7F /* Shadowsocks_macOS.framework */; };
 		FC1F250F2049B0DB0012D758 /* OutlineConnectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC28C2B520223164005FD743 /* OutlineConnectionStore.swift */; };
 		FC1F25122049B1470012D758 /* OutlineConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC28C282201A93D0005FD743 /* OutlineConnection.swift */; };
@@ -41,10 +43,8 @@
 		FC28C283201A93D0005FD743 /* OutlineConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC28C282201A93D0005FD743 /* OutlineConnection.swift */; };
 		FC28C284201A93D6005FD743 /* OutlineConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC28C282201A93D0005FD743 /* OutlineConnection.swift */; };
 		FC28C2B720223167005FD743 /* OutlineConnectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC28C2B520223164005FD743 /* OutlineConnectionStore.swift */; };
-		FC5FF90D1F3E1CEE0032A745 /* PacketProcessor_macOS.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 3679D25B96374CD5BE52C04F /* PacketProcessor_macOS.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		FC5FF90F1F3E1CEE0032A745 /* CocoaAsyncSocket.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 65F10DB2408748869386705A /* CocoaAsyncSocket.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		FC5FF93A1F3E1E5F0032A745 /* VpnExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = FC5FF92B1F3E1E5F0032A745 /* VpnExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		FC5FF9421F3E1E7B0032A745 /* PacketProcessor_macOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3679D25B96374CD5BE52C04F /* PacketProcessor_macOS.framework */; };
 		FC5FF9441F3E1E7B0032A745 /* CocoaAsyncSocket.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 65F10DB2408748869386705A /* CocoaAsyncSocket.framework */; };
 		FC5FF9471F3E1E8B0032A745 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC5FF9461F3E1E8B0032A745 /* NetworkExtension.framework */; };
 		FC5FF94E1F3E1EF00032A745 /* PacketTunnelProvider.m in Sources */ = {isa = PBXBuildFile; fileRef = FC5FF94A1F3E1EF00032A745 /* PacketTunnelProvider.m */; };
@@ -95,7 +95,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				FC5FF90D1F3E1CEE0032A745 /* PacketProcessor_macOS.framework in Embed Frameworks */,
 				FC8C30DC1FA78E5E004262BE /* Sentry.framework in Embed Frameworks */,
 				FC8C30EB1FA7C0F6004262BE /* CocoaLumberjackSwift.framework in Embed Frameworks */,
 				FC8C30E91FA7C0F6004262BE /* CocoaLumberjack.framework in Embed Frameworks */,
@@ -113,6 +112,16 @@
 				FC0799F72037543F00A1C822 /* OutlineLauncher.app in Copy OutlineLauncher */,
 			);
 			name = "Copy OutlineLauncher";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FC08FD42221494A800520ECD /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (
+				FC08FD432214952F00520ECD /* go-tun2socks-macos in CopyFiles */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		FC1F25172049B2E40012D758 /* Embed Frameworks */ = {
@@ -143,7 +152,6 @@
 /* Begin PBXFileReference section */
 		01C0FE24369C408597E6E257 /* OutlineConnectivity.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = OutlineConnectivity.swift; path = "cordova-plugin-outline/OutlineConnectivity.swift"; sourceTree = "<group>"; };
 		19209C3AABCC45AB8CFDD974 /* CDVClipboard.h */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.h; name = CDVClipboard.h; path = com.verso.cordova.clipboard/CDVClipboard.h; sourceTree = "<group>"; };
-		3679D25B96374CD5BE52C04F /* PacketProcessor_macOS.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = PacketProcessor_macOS.framework; path = "Outline/Plugins/cordova-plugin-outline/PacketProcessor_macOS.framework"; sourceTree = "<group>"; };
 		469466FF1BDB44C081741BF5 /* CDVClipboard.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = CDVClipboard.m; path = com.verso.cordova.clipboard/CDVClipboard.m; sourceTree = "<group>"; };
 		512326387AA5498389C6B4BA /* CDVDevice.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = CDVDevice.m; path = "cordova-plugin-device/CDVDevice.m"; sourceTree = "<group>"; };
 		65F10DB2408748869386705A /* CocoaAsyncSocket.framework */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = wrapper.framework; name = CocoaAsyncSocket.framework; path = "Outline/Plugins/cordova-plugin-outline/CocoaAsyncSocket.framework"; sourceTree = "<group>"; };
@@ -177,6 +185,7 @@
 		FC0799F12037532A00A1C822 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FC0799F22037532A00A1C822 /* OutlineLauncher.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OutlineLauncher.entitlements; sourceTree = "<group>"; };
 		FC0799F82037545D00A1C822 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
+		FC08FD3F22148EC600520ECD /* go-tun2socks-macos */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = "go-tun2socks-macos"; sourceTree = "<group>"; };
 		FC1FCADA216D289F00F078A5 /* Subnet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Subnet.swift; path = Outline/Resources/vpn/Subnet.swift; sourceTree = SOURCE_ROOT; };
 		FC28C280201A93BF005FD743 /* OutlineVpn.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = OutlineVpn.swift; path = "cordova-plugin-outline/OutlineVpn.swift"; sourceTree = "<group>"; };
 		FC28C282201A93D0005FD743 /* OutlineConnection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = OutlineConnection.swift; path = "cordova-plugin-outline/OutlineConnection.swift"; sourceTree = "<group>"; };
@@ -214,7 +223,6 @@
 				70BD686718FFB06500A1EFCF /* WebKit.framework in Frameworks */,
 				70BD682718FFB02D00A1EFCF /* Cocoa.framework in Frameworks */,
 				FC8C30DB1FA78E5E004262BE /* Sentry.framework in Frameworks */,
-				7C38CF57F8B548379A15F2AB /* PacketProcessor_macOS.framework in Frameworks */,
 				FC0FFD701FCDBE4E00EB0129 /* Shadowsocks_macOS.framework in Frameworks */,
 				FC5FF9501F3E1FD40032A745 /* NetworkExtension.framework in Frameworks */,
 				2945BC6F307942AD9ED49E83 /* CocoaAsyncSocket.framework in Frameworks */,
@@ -234,7 +242,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				FC5FF9421F3E1E7B0032A745 /* PacketProcessor_macOS.framework in Frameworks */,
 				FCAFD3171FBA528C0057EE7F /* Shadowsocks_macOS.framework in Frameworks */,
 				FC5FF9471F3E1E8B0032A745 /* NetworkExtension.framework in Frameworks */,
 				FC8C30EC1FA7C106004262BE /* CocoaLumberjack.framework in Frameworks */,
@@ -302,7 +309,6 @@
 				70BD685A18FFB04300A1EFCF /* CordovaLib.xcodeproj */,
 				70BD682618FFB02D00A1EFCF /* Cocoa.framework */,
 				70BD682818FFB02D00A1EFCF /* Other Frameworks */,
-				3679D25B96374CD5BE52C04F /* PacketProcessor_macOS.framework */,
 				65F10DB2408748869386705A /* CocoaAsyncSocket.framework */,
 			);
 			name = Frameworks;
@@ -366,6 +372,7 @@
 		70D86C851B903D11000750E0 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				FC08FD3F22148EC600520ECD /* go-tun2socks-macos */,
 				FC55AB411F4F960A0056F12C /* VpnExtension-Info.plist */,
 				A508014170A1492DB0D800B3 /* Outline-Bridging-Header.h */,
 				D83B939D01CF4540A9A3DF86 /* vpn */,
@@ -415,6 +422,7 @@
 				FC0799F62037541600A1C822 /* Copy OutlineLauncher */,
 				708BE60C1B851BAD00301ADB /* Embed Frameworks */,
 				FC5FF9411F3E1E5F0032A745 /* Embed App Extensions */,
+				FC08FD42221494A800520ECD /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -567,6 +575,7 @@
 			files = (
 				70BD683118FFB02D00A1EFCF /* InfoPlist.strings in Resources */,
 				707060AF18FFC05700755D46 /* MainViewController.xib in Resources */,
+				FC08FD4022148EC600520ECD /* go-tun2socks-macos in Resources */,
 				70BD683F18FFB02D00A1EFCF /* Images.xcassets in Resources */,
 				EAD11960A27C45AFA5E46584 /* Outline-Bridging-Header.h in Resources */,
 				7A5BA083B0B5480CA037B818 /* vpn in Resources */,
@@ -585,6 +594,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FC08FD4122148EC600520ECD /* go-tun2socks-macos in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
