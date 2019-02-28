@@ -254,27 +254,32 @@ function startTun2socks(isUdpSupported: boolean, onDisconnected: () => void): Pr
     //   --transparent-dns
     const args: string[] = [];
     args.push(
-        '--tundev',
+        '-tunName',
         isWindows ? `tap0901:${TUN2SOCKS_DEVICE_NAME}:${TUN2SOCKS_DEVICE_IP}:${
                         TUN2SOCKS_DEVICE_NETWORK}:${TUN2SOCKS_VIRTUAL_ROUTER_NETMASK}` :
                     TUN2SOCKS_DEVICE_NAME);
-    args.push('--netif-ipaddr', TUN2SOCKS_VIRTUAL_ROUTER_IP);
-    args.push('--netif-netmask', TUN2SOCKS_VIRTUAL_ROUTER_NETMASK);
-    args.push('--socks-server-addr', `${PROXY_IP}:${SS_LOCAL_PORT}`);
-    args.push('--loglevel', 'error');
-    args.push('--transparent-dns');
+    args.push('-dnsServer', '8.8.8.8');
+    args.push('-proxyServer', `${PROXY_IP}:${SS_LOCAL_PORT}`);
+    args.push('-tunAddr', TUN2SOCKS_DEVICE_IP);
+    args.push('-tunGw', TUN2SOCKS_VIRTUAL_ROUTER_IP);
+    args.push('-tunMask', TUN2SOCKS_VIRTUAL_ROUTER_NETMASK);
+    // args.push('--netif-ipaddr', TUN2SOCKS_VIRTUAL_ROUTER_IP);
+    // args.push('--netif-netmask', TUN2SOCKS_VIRTUAL_ROUTER_NETMASK);
+    // args.push('--socks-server-addr', `${PROXY_IP}:${SS_LOCAL_PORT}`);
+    // args.push('--loglevel', 'error');
+    // args.push('--transparent-dns');
     // Enabling transparent DNS without UDP options causes tun2socks to use TCP for DNS resolution.
-    if (isUdpSupported) {
-      args.push('--socks5-udp');
-      args.push('--udp-relay-addr', `${PROXY_IP}:${SS_LOCAL_PORT}`);
-    }
+    // if (isUdpSupported) {
+    //   args.push('--socks5-udp');
+    //   args.push('--udp-relay-addr', `${PROXY_IP}:${SS_LOCAL_PORT}`);
+    // }
 
     // TODO: Duplicate ss-local's error handling.
     try {
-      tun2socks = spawn(pathToEmbeddedBinary('badvpn', 'badvpn-tun2socks'), args);
+      tun2socks = spawn(pathToEmbeddedBinary('badvpn', 'go-tun2socks'), args);
 
       // Ignore stdio if not consuming the process output (pass {stdio: 'igonore'} to spawn);
-      // otherwise the process execution is suspended when the unconsumed streams exceed the
+      // otherwise the process execution is suspended when the un?consumed streams exceed the
       // system limit (~200KB). See https://github.com/nodejs/node/issues/4236
       tun2socks.stdout.on('data', (s) => {
         console.error(`${s}`);
