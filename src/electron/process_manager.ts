@@ -16,7 +16,7 @@ import {ChildProcess, execSync, spawn} from 'child_process';
 import {powerMonitor} from 'electron';
 import {platform} from 'os';
 
-import * as errors from '../www/model/errors';
+import {ErrorCode, OutlinePluginError} from '../www/model/errors';
 
 import {checkUdpForwardingEnabled, isServerReachable, validateServerCredentials} from './connectivity';
 import {RoutingDaemon} from './routing_service';
@@ -75,12 +75,12 @@ function testTapDevice() {
   // Find lines containing the TAP device name.
   const tapLines = lines.filter(s => s.indexOf(TUN2SOCKS_TAP_DEVICE_NAME) !== -1);
   if (tapLines.length < 1) {
-    throw new errors.SystemConfigurationException(`TAP device not found`);
+    throw new OutlinePluginError(`TAP device not found`, ErrorCode.SYSTEM_MISCONFIGURED);
   }
 
   // Within those lines, search for the expected IP.
   if (tapLines.filter(s => s.indexOf(TUN2SOCKS_TAP_DEVICE_IP) !== -1).length < 1) {
-    throw new errors.SystemConfigurationException(`TAP device has wrong IP`);
+    throw new OutlinePluginError(`TAP device has wrong IP`, ErrorCode.SYSTEM_MISCONFIGURED);
   }
 }
 

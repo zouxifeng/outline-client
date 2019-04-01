@@ -58,21 +58,12 @@ export class OutlineServer implements PersistentServer {
   }
 
   connect(): Promise<void> {
-    return this.connection.start().catch((e) => {
-      // e originates in "native" code: either Cordova or Electron's main process.
-      // Because of this, we cannot assume "instanceof OutlinePluginError" will work.
-      if (e.errorCode) {
-        throw errors.fromErrorCode(e.errorCode);
-      }
-      throw e;
-    });
+    return this.connection.start();
   }
 
   disconnect(): Promise<void> {
-    return this.connection.stop().catch((e) => {
-      // TODO: None of the plugins currently return an ErrorCode on disconnection.
-      throw new errors.RegularNativeError();
-    });
+    // TODO: safe?
+    return this.connection.stop();
   }
 
   checkRunning(): Promise<boolean> {

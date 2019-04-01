@@ -14,7 +14,7 @@
 
 import {SHADOWSOCKS_URI} from 'ShadowsocksConfig/shadowsocks_config';
 
-import * as errors from '../model/errors';
+import {ErrorCode, OutlinePluginError} from '../model/errors';
 import * as events from '../model/events';
 import {Server} from '../model/server';
 
@@ -124,52 +124,56 @@ export class App {
     this.pullClipboardText();
   }
 
-  showLocalizedError(e?: Error, toastDuration = 10000) {
+  showLocalizedError(e: OutlinePluginError, toastDuration = 10000) {
     let messageKey: string;
     let messageParams: string[]|undefined;
     let buttonKey: string;
     let buttonHandler: () => void;
     let buttonLink: string;
 
-    if (e instanceof errors.VpnPermissionNotGranted) {
-      messageKey = 'outline-plugin-error-vpn-permission-not-granted';
-    } else if (e instanceof errors.InvalidServerCredentials) {
-      messageKey = 'outline-plugin-error-invalid-server-credentials';
-    } else if (e instanceof errors.RemoteUdpForwardingDisabled) {
-      messageKey = 'outline-plugin-error-udp-forwarding-not-enabled';
-    } else if (e instanceof errors.ServerUnreachable) {
-      messageKey = 'outline-plugin-error-server-unreachable';
-    } else if (e instanceof errors.FeedbackSubmissionError) {
-      messageKey = 'error-feedback-submission';
-    } else if (e instanceof errors.ServerUrlInvalid) {
-      messageKey = 'error-invalid-access-key';
-    } else if (e instanceof errors.ServerIncompatible) {
-      messageKey = 'error-server-incompatible';
-    } else if (e instanceof errors.OperationTimedOut) {
-      messageKey = 'error-timeout';
-    } else if (e instanceof errors.ShadowsocksStartFailure && this.isWindows()) {
-      // Fall through to `error-unexpected` for other platforms.
-      messageKey = 'outline-plugin-error-antivirus';
-      buttonKey = 'fix-this';
-      buttonLink = 'https://s3.amazonaws.com/outline-vpn/index.html#/en/support/antivirusBlock';
-    } else if (e instanceof errors.ConfigureSystemProxyFailure) {
-      messageKey = 'outline-plugin-error-routing-tables';
-      buttonKey = 'feedback-page-title';
-      buttonHandler = () => {
-        // TODO: Drop-down has no selected item, why not?
-        this.rootEl.changePage('feedback');
-      };
-    } else if (e instanceof errors.NoAdminPermissions) {
-      messageKey = 'outline-plugin-error-admin-permissions';
-    } else if (e instanceof errors.UnsupportedRoutingTable) {
-      messageKey = 'outline-plugin-error-unsupported-routing-table';
-    } else if (e instanceof errors.ServerAlreadyAdded) {
-      messageKey = 'error-server-already-added';
-      messageParams = ['serverName', e.server.name];
-    } else if (e instanceof errors.SystemConfigurationException) {
-      messageKey = 'outline-plugin-error-system-configuration';
-    } else {
-      messageKey = 'error-unexpected';
+    switch (e.errorCode) {
+      // if (e instanceof errors.VpnPermissionNotGranted) {
+      //   messageKey = 'outline-plugin-error-vpn-permission-not-granted';
+      // } else if (e instanceof errors.InvalidServerCredentials) {
+      //   messageKey = 'outline-plugin-error-invalid-server-credentials';
+      // } else if (e instanceof errors.RemoteUdpForwardingDisabled) {
+      //   messageKey = 'outline-plugin-error-udp-forwarding-not-enabled';
+      case ErrorCode.SERVER_UNREACHABLE:
+        messageKey = 'outline-plugin-error-server-unreachable';
+        break;
+        // } else if (e instanceof errors.FeedbackSubmissionError) {
+        //   messageKey = 'error-feedback-submission';
+        // } else if (e instanceof errors.ServerUrlInvalid) {
+        //   messageKey = 'error-invalid-access-key';
+        // } else if (e instanceof errors.ServerIncompatible) {
+        //   messageKey = 'error-server-incompatible';
+        // } else if (e instanceof errors.OperationTimedOut) {
+        //   messageKey = 'error-timeout';
+        // } else if (e instanceof errors.ShadowsocksStartFailure && this.isWindows()) {
+        //   // Fall through to `error-unexpected` for other platforms.
+        //   messageKey = 'outline-plugin-error-antivirus';
+        //   buttonKey = 'fix-this';
+        //   buttonLink =
+        //   'https://s3.amazonaws.com/outline-vpn/index.html#/en/support/antivirusBlock';
+        // } else if (e instanceof errors.ConfigureSystemProxyFailure) {
+        //   messageKey = 'outline-plugin-error-routing-tables';
+        //   buttonKey = 'feedback-page-title';
+        //   buttonHandler = () => {
+        //     // TODO: Drop-down has no selected item, why not?
+        //     this.rootEl.changePage('feedback');
+        //   };
+        // } else if (e instanceof errors.NoAdminPermissions) {
+        //   messageKey = 'outline-plugin-error-admin-permissions';
+        // } else if (e instanceof errors.UnsupportedRoutingTable) {
+        //   messageKey = 'outline-plugin-error-unsupported-routing-table';
+        // } else if (e instanceof errors.ServerAlreadyAdded) {
+        //   messageKey = 'error-server-already-added';
+        //   messageParams = ['serverName', e.server.name];
+        // } else if (e instanceof errors.SystemConfigurationException) {
+        //   messageKey = 'outline-plugin-error-system-configuration';
+
+      default:
+        messageKey = 'error-unexpected';
     }
 
     const message =
@@ -379,10 +383,8 @@ export class App {
         (e) => {
           card.state = 'DISCONNECTED';
           this.showLocalizedError(e);
-          console.error(`could not connect to server ${serverId}: ${e.name}`);
-          if (!(e instanceof errors.RegularNativeError)) {
-            this.errorReporter.report(`connection failure: ${e.name}`, 'connection-failure');
-          }
+          // TODO: show error code
+          console.error(`could not connect to server ${serverId}: ${e.message}`);
         });
   }
 

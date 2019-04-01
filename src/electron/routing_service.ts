@@ -16,7 +16,7 @@ import {createConnection, Socket} from 'net';
 import {platform} from 'os';
 import * as sudo from 'sudo-prompt';
 
-import * as errors from '../www/model/errors';
+import {ErrorCode, OutlinePluginError} from '../www/model/errors';
 
 import {getServiceStartCommand} from './util';
 
@@ -108,7 +108,8 @@ export class RoutingDaemon {
 
       const initialErrorHandler = () => {
         if (!(isLinux && retry)) {
-          reject(new errors.SystemConfigurationException(`routing daemon is not running`));
+          reject(new OutlinePluginError(
+              `routing daemon is not running`, ErrorCode.SYSTEM_MISCONFIGURED));
           return;
         }
 
@@ -117,7 +118,8 @@ export class RoutingDaemon {
           if (sudoError) {
             // NOTE: The script could have terminated with an error - see the comment in
             //       sudo-prompt's typings definition.
-            reject(new errors.NoAdminPermissions());
+            reject(
+                new OutlinePluginError(`need admin permissions`, ErrorCode.NO_ADMIN_PERMISSIONS));
             return;
           }
 

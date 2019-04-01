@@ -264,7 +264,8 @@ app.on('ready', () => {
         .catch((e) => {
           // No connection at shutdown, or failure - either way, no need to start.
           // TODO: Instead of quitting, how about creating the system tray icon?
-          console.log(`${Options.AUTOSTART} was passed but we were not connected at shutdown - exiting`);
+          console.log(
+              `${Options.AUTOSTART} was passed but we were not connected at shutdown - exiting`);
           app.quit();
         });
   } else {
@@ -373,25 +374,20 @@ promiseIpc.on(
 
       console.log(`connecting to ${args.id}...`);
 
-      try {
-        // Rather than repeadedly resolving a hostname in what may be a fingerprint-able way,
-        // resolve it just once, upfront.
-        args.config.host = await connectivity.lookupIp(args.config.host || '');
+      // Rather than repeadedly resolving a hostname in what may be a fingerprint-able way,
+      // resolve it just once, upfront.
+      args.config.host = await connectivity.lookupIp(args.config.host || '');
 
-        await connectivity.isServerReachable(
-            args.config.host || '', args.config.port || 0, REACHABILITY_TIMEOUT_MS);
-        await startVpn(args.config, args.id);
+      await connectivity.isServerReachable(
+          args.config.host || '', args.config.port || 0, REACHABILITY_TIMEOUT_MS);
+      await startVpn(args.config, args.id);
 
-        console.log(`connected to ${args.id}`);
+      console.log(`connected to ${args.id}`);
 
-        // Auto-connect requires IPs; the hostname in here has already been resolved (see above).
-        connectionStore.save(args).catch((e) => {
-          console.error('Failed to store connection.');
-        });
-      } catch (e) {
-        console.error(`could not connect: ${e.name} (${e.message})`);
-        throw errors.toErrorCode(e);
-      }
+      // Auto-connect requires IPs; the hostname in here has already been resolved (see above).
+      connectionStore.save(args).catch((e) => {
+        console.error('Failed to store connection.');
+      });
     });
 
 // Disconnects from the current server, if any.

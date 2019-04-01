@@ -18,7 +18,7 @@ import * as net from 'net';
 import * as socks from 'socks';
 
 import * as util from '../www/app/util';
-import * as errors from '../www/model/errors';
+import {ErrorCode, OutlinePluginError} from '../www/model/errors';
 
 const CREDENTIALS_TEST_DOMAINS = ['example.com', 'ietf.org', 'wikipedia.org'];
 const DNS_LOOKUP_TIMEOUT_MS = 10000;
@@ -50,7 +50,8 @@ export function lookupIp(hostname: string): Promise<string> {
       new Promise<string>((fulfill, reject) => {
         dns.lookup(hostname, 4, (e, address) => {
           if (e) {
-            return reject(new errors.ServerUnreachable('could not resolve proxy server hostname'));
+            return reject(new OutlinePluginError(
+                'could not resolve proxy server hostname', ErrorCode.SERVER_UNREACHABLE));
           }
           fulfill(address);
         });
@@ -72,7 +73,7 @@ export function isServerReachable(
         if (attempt < maxAttempts) {
           setTimeout(connect, retryIntervalMs);
         } else {
-          reject(new errors.ServerUnreachable());
+          reject(new OutlinePluginError('cannot contact server', ErrorCode.SERVER_UNREACHABLE));
         }
       });
 
@@ -105,8 +106,9 @@ export function validateServerCredentials(proxyAddress: string, proxyIp: number)
         },
         (e, socket) => {
           if (e) {
-            reject(new errors.InvalidServerCredentials(
-                `could not connect to remote test website: ${e.message}`));
+            reject(new OutlinePluginError(
+                `could not connect to remote test website: ${e.message}`,
+                ErrorCode.INVALID_SERVER_CREDENTIALS));
             return;
           }
 
@@ -118,13 +120,15 @@ export function validateServerCredentials(proxyAddress: string, proxyIp: number)
               fulfill();
             } else {
               socket.end();
-              reject(new errors.InvalidServerCredentials(
-                  `unexpected response from remote test website`));
+              reject(new OutlinePluginError(
+                  `unexpected response from remote test website`,
+                  ErrorCode.INVALID_SERVER_CREDENTIALS));
             }
           });
 
           socket.on('close', () => {
-            reject(new errors.InvalidServerCredentials(`could not connect to remote test website`));
+            reject(new OutlinePluginError(
+                `could not connect to remote test website`, ErrorCode.INVALID_SERVER_CREDENTIALS));
           });
 
           // Sockets must be resumed before any data will come in, as they are paused right before
@@ -144,14 +148,15 @@ export function checkUdpForwardingEnabled(proxyAddress: string, proxyIp: number)
         },
         (err, socket, info) => {
           if (err) {
-            reject(new errors.RemoteUdpForwardingDisabled(`could not connect to local proxy`));
+            reject(new OutlinePluginError(
+                `could not connect to local proxy`, ErrorCode.UDP_RELAY_NOT_ENABLED));
             return;
           }
           const packet = socks.createUDPFrame({host: '1.1.1.1', port: 53}, DNS_REQUEST);
           const udpSocket = dgram.createSocket('udp4');
 
           udpSocket.on('error', (e) => {
-            reject(new errors.RemoteUdpForwardingDisabled('UDP socket failure'));
+            reject(new OutlinePluginError(`UDP socket failure`, ErrorCode.UDP_RELAY_NOT_ENABLED));
           });
 
           udpSocket.on('message', (msg, info) => {

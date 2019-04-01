@@ -45,17 +45,9 @@ export class WindowsOutlineConnection implements cordova.plugins.outline.Connect
       this.handleStatusChange(ConnectionStatus.DISCONNECTED);
     });
 
-    return promiseIpc.send('start-proxying', {config: this.config, id: this.id})
-        .then(() => {
-          this.running = true;
-        })
-        .catch((e: errors.ErrorCode|Error) => {
-          if (typeof e === 'number') {
-            throw new errors.OutlinePluginError(e);
-          } else {
-            throw e;
-          }
-        });
+    return promiseIpc.send('start-proxying', {config: this.config, id: this.id}).then(() => {
+      this.running = true;
+    });
   }
 
   stop(): Promise<void> {
