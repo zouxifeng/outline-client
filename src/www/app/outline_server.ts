@@ -57,6 +57,10 @@ export class OutlineServer implements PersistentServer {
     return this.config.host;
   }
 
+  get port() {
+    return this.config.port;
+  }
+
   connect(): Promise<void> {
     return this.connection.start().catch((e) => {
       // e originates in "native" code: either Cordova or Electron's main process.
