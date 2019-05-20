@@ -112,7 +112,7 @@
           padding: 20% 0;
         }
       }
-      
+
     </style>
 
     <paper-card>
@@ -126,6 +126,8 @@
           <paper-listbox id="menu" slot="dropdown-content" on-iron-activate="_onMenuItemPressed" attr-for-selected="name">
             <paper-item name="rename">[[localize('server-rename')]]</paper-item>
             <paper-item name="forget">[[localize('server-forget')]]</paper-item>
+            <!-- TODO: l10n -->
+            <paper-item name="dns">DNS</paper-item>
           </paper-listbox>
         </paper-menu-button>
       </div>
@@ -156,6 +158,7 @@
         serverName: String,
         serverId: String,
         serverHost: String,
+        dnsResolver: String,
         state: {
           type: String,
           value: 'DISCONNECTED'
@@ -208,18 +211,23 @@
           this._fireForgetRequest();
         } else if (detail.selected === 'rename') {
           this._fireShowServerRename();
+        } else if (detail.selected === 'dns') {
+          this._fireShowDnsResolver();
         }
         // This can leave the pressed paper-item in the selected state,
         // causing it to get selected styling (e.g. font-weight: bold),
         // so explicitly deselect it:
-        this.async(function () { this.$.menu.select(null); });
+        this.async(function() { this.$.menu.select(null); });
       },
-      _fireForgetRequest: function () {
+      _fireForgetRequest: function() {
         this.fire('ForgetPressed', {serverId: this.serverId});
       },
       _fireShowServerRename: function() {
         this.fire('ShowServerRename', {serverName: this.serverName, serverId: this.serverId});
-      }
+      },
+      _fireShowDnsResolver: function() {
+        this.fire('ShowDnsResolver', {serverId: this.serverId, dnsResolver: this.dnsResolver});
+      },
     });
   </script>
 </dom-module>

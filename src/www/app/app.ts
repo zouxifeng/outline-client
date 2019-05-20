@@ -103,6 +103,8 @@ export class App {
         'AutoConnectDialogDismissed', this.autoConnectDialogDismissed.bind(this));
     this.rootEl.addEventListener(
         'ShowServerRename', this.rootEl.showServerRename.bind(this.rootEl));
+    this.rootEl.addEventListener('ShowDnsResolver', this.rootEl.showDnsResolver.bind(this.rootEl));
+    this.rootEl.addEventListener('SetDnsResolverRequested', this.setDnsResolver.bind(this));
     this.feedbackViewEl.$.submitButton.addEventListener('tap', this.submitFeedback.bind(this));
     this.rootEl.addEventListener('PrivacyTermsAcked', this.ackPrivacyTerms.bind(this));
 
@@ -257,6 +259,13 @@ export class App {
 
   private updateDownloaded() {
     this.rootEl.showToast(this.localize('update-downloaded'), 60000);
+  }
+
+  private setDnsResolver(event: CustomEvent) {
+    const dnsResolver = event.detail.newDnsResolver;
+    const serverId = event.detail.serverId;
+    this.serverRepo.setDnsResolver(serverId, dnsResolver);
+    this.serverListEl.getServerCard(serverId).dnsResolver = dnsResolver;
   }
 
   private requestPromptAddServer() {

@@ -36,6 +36,7 @@
 
 <link rel="import" href="about-view.html">
 <link rel="import" href="add-server-view.html">
+<link rel="import" href="dns-resolver-dialog.html">
 <link rel="import" href="feedback-view.html">
 <link rel="import" href="licenses-view.html">
 <link rel="import" href="outline-icons.html">
@@ -341,6 +342,7 @@
     https://github.com/PolymerElements/app-layout/issues/295
     Once those are fixed we can consider moving this into server-card.html -->
     <server-rename-dialog id="serverRenameDialog" root-path="[[rootPath]]" localize="[[localize]]"></server-rename-dialog>
+    <dns-resolver-dialog id="dnsResolverDialog" root-path="[[rootPath]]" localize="[[localize]]"></dns-resolver-dialog>
   </template>
   <script>
     'use strict';
@@ -659,6 +661,9 @@
       },
       showServerRename: function(event) {
         this.$.serverRenameDialog.open(event.detail.serverName, event.detail.serverId);
+      },
+      showDnsResolver: function(event) {
+        this.$.dnsResolverDialog.open(event.detail.serverId, event.detail.dnsResolver);
       },
       _computeShouldShowAppLogo: function(page) {
         return page === 'servers';

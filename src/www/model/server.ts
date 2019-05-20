@@ -42,4 +42,5 @@ export interface ServerRepository {
   undoForget(serverId: string): void;
   getAll(): Server[];
   getById(serverId: string): Server|undefined;
+  setDnsResolver(serverId: string, dnsResolvers: string): void;
 }

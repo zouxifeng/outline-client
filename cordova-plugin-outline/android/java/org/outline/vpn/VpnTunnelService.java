@@ -184,8 +184,14 @@ public class VpnTunnelService extends VpnService {
     if (isRestart) {
       vpnTunnel.setUdpSupport(remoteUdpForwardingEnabled);
     } else {
+      String dnsResolver = null;
+      try {
+        dnsResolver = config.getString("dnsResolver");
+      } catch (JSONException jsonE) {
+        // The user has not set a custom DNS resolver, use tunnel defaults.
+      }
       // Only establish the VPN if this is not a connection restart.
-      if (!vpnTunnel.establishVpn()) {
+      if (!vpnTunnel.establishVpn(dnsResolver)) {
         LOG.severe("Failed to establish the VPN");
         onVpnStartFailure(OutlinePlugin.ErrorCode.VPN_START_FAILURE);
         return;

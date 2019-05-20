@@ -40,8 +40,8 @@
       }
     </style>
     <template is="dom-repeat" items="[[servers]]">
-      <server-card server-id="[[item.id]]" server-name="[[item.name]]" server-host="[[item.host]]" localize="[[localize]]"
-        root-path="[[rootPath]]"></server-card>
+      <server-card server-id="[[item.id]]" server-name="[[item.name]]" server-host="[[item.host]]" dns-resolver="[[item.config.dnsResolver]]"
+        localize="[[localize]]" root-path="[[rootPath]]"></server-card>
     </template>
   </template>
   <script>

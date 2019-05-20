@@ -43,6 +43,7 @@ declare namespace cordova.plugins.outline {
     host?: string;
     port?: number;
     name?: string;
+    dnsResolver?: string;
   }
 
   // Represents a VPN connection to a remote server.

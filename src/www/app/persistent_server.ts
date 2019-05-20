@@ -102,6 +102,16 @@ export class PersistentServerRepository implements ServerRepository {
     return !!this.serverFromConfig(config);
   }
 
+  setDnsResolver(serverId: string, dnsResolver: string) {
+    const server = this.serverById.get(serverId);
+    if (!server) {
+      console.error(`Cannot set DNS resolver of nonexistent server ${serverId}`);
+      return;
+    }
+    server.config.dnsResolver = dnsResolver;
+    this.storeServers();
+  }
+
   private serverFromConfig(config: ServerConfig): PersistentServer|undefined {
     for (const server of this.getAll()) {
       if (configsMatch(server.config, config)) {
