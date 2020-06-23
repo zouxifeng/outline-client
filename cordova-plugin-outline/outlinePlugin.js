@@ -19,25 +19,25 @@ const exec = require('cordova/exec');
 
 const PLUGIN_NAME = 'OutlinePlugin';
 
-const log = {
-  initialize: function(apiKey) {
-    return new Promise(function(resolve, reject) {
+class Log {
+  static async initialize(apiKey) {
+    return new Promise((resolve, reject) => {
       exec(resolve, reject, PLUGIN_NAME, 'initializeErrorReporting', [apiKey]);
     });
-  },
+  }
 
-  send: function(uuid) {
-    return new Promise(function(resolve, reject) {
+  static send(uuid) {
+    return new Promise((resolve, reject) => {
       exec(resolve, reject, PLUGIN_NAME, 'reportEvents', [uuid]);
     });
   }
-};
-
-function quitApplication() {
-  exec(function() {}, function() {}, PLUGIN_NAME, 'quitApplication', []);
 }
 
-var globalId = 100;  // Internal, incremental ID.
+function quitApplication() {
+  exec(() => {}, () => {}, PLUGIN_NAME, 'quitApplication', []);
+}
+
+let globalId = 100;  // Internal, incremental ID.
 
 // This must be kept in sync with:
 //  - cordova-plugin-outline/apple/src/OutlineVpn.swift#ErrorCode
@@ -61,8 +61,10 @@ const ERROR_CODE = {
 
 // This must be kept in sync with the TypeScript definition:
 //   www/model/errors.ts
-function OutlinePluginError(errorCode) {
-  this.errorCode = errorCode || ERROR_CODE.UNEXPECTED;
+class OutlinePluginError {
+  constructor(errorCode) {
+    this.errorCode = errorCode || ERROR_CODE.UNEXPECTED;
+  }
 }
 
 const ConnectionStatus = {
@@ -71,58 +73,60 @@ const ConnectionStatus = {
   RECONNECTING: 2
 }
 
-function Connection(config, id) {
-  if (id) {
-    this.id_ = id.toString();
-  } else {
-    this.id_ = (globalId++).toString();
+class Connection {
+  constructor(config, id) {
+    if (id) {
+      this.id_ = id.toString();
+    } else {
+      this.id_ = (globalId++).toString();
+    }
+
+    if (!config) {
+      throw new Error('Server configuration is required');
+    }
+    this.config = config;
   }
 
-  if (!config) {
-    throw new Error('Server configuration is required');
+  start() {
+    return this._execAsync('start', [this.config]);
   }
-  this.config = config;
+
+  stop() {
+    return this._execAsync('stop', []);
+  }
+
+  isRunning() {
+    return this._execAsync('isRunning', []);
+  }
+
+  isReachable() {
+    return this._execAsync('isReachable', [this.config.host, this.config.port]);
+  }
+
+  onStatusChange(listener) {
+    const onError = (err) => {
+      console.warn('Failed to execute on status change listener', err);
+    };
+    this._exec('onStatusChange', [], listener, onError);
+  }
+
+  _execAsync(cmd, args) {
+    return new Promise((resolve, reject) => {
+      const rejectWithError = (errorCode) => {
+        reject(new OutlinePluginError(errorCode));
+      };
+      exec(resolve, rejectWithError, PLUGIN_NAME, cmd, [this.id_].concat(args));
+    });
+  }
+
+  _exec(cmd, args, success, error) {
+    exec(success, error, PLUGIN_NAME, cmd, [this.id_].concat(args));
+  }
 }
 
-Connection.prototype._promiseExec = function(cmd, args) {
-  return new Promise(function(resolve, reject) {
-    const rejectWithError = function(errorCode) {
-      reject(new OutlinePluginError(errorCode));
-    };
-    exec(resolve, rejectWithError, PLUGIN_NAME, cmd, [this.id_].concat(args));
-  }.bind(this));
-};
-
-Connection.prototype._exec = function(cmd, args, success, error) {
-  exec(success, error, PLUGIN_NAME, cmd, [this.id_].concat(args));
-};
-
-Connection.prototype.start = function() {
-  return this._promiseExec('start', [this.config]);
-};
-
-Connection.prototype.stop = function() {
-  return this._promiseExec('stop', []);
-};
-
-Connection.prototype.isRunning = function() {
-  return this._promiseExec('isRunning', []);
-};
-
-Connection.prototype.isReachable = function() {
-  return this._promiseExec('isReachable', [this.config.host, this.config.port]);
-};
-
-Connection.prototype.onStatusChange = function(listener) {
-  const onError = function(err) {
-    console.warn('Failed to execute disconnect listener', err);
-  };
-  this._exec('onStatusChange', [], listener, onError);
-};
-
 module.exports = {
-  Connection: Connection,
-  ConnectionStatus: ConnectionStatus,
-  log: log,
-  quitApplication: quitApplication,
+  Connection,
+  ConnectionStatus,
+  log: Log,
+  quitApplication,
 };
