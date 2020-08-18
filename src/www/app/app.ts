@@ -301,7 +301,8 @@ export class App {
     }
   }
 
-  private confirmAddServer(accessKey: string, fromClipboard = false) {
+  private async confirmAddServer(accessKey: string, fromClipboard = false) {
+    console.log('CONFIRM ADD SERVER', accessKey, fromClipboard);
     const addServerView = this.rootEl.$.addServerView;
     accessKey = unwrapInvite(accessKey);
     if (fromClipboard && accessKey in this.ignoredAccessKeys) {
@@ -309,28 +310,43 @@ export class App {
     } else if (fromClipboard && addServerView.isAddingServer()) {
       return console.debug('Already adding a server');
     }
-    // Expect SHADOWSOCKS_URI.parse to throw on invalid access key; propagate any exception.
-    let shadowsocksConfig = null;
-    try {
-      shadowsocksConfig = SHADOWSOCKS_URI.parse(accessKey);
-    } catch (error) {
-      const message = !!error.message ? error.message : 'Failed to parse access key';
-      throw new errors.ServerUrlInvalid(message);
+
+    let serverConfig: cordova.plugins.outline.ServerConfig;
+    if (accessKey.startsWith('outline://')) {
+      console.log('ACCESS URL', accessKey);
+      const accessUrl = new URL(accessKey.replace('outline://', ''));
+      console.log(accessUrl);
+      const params = new URLSearchParams(accessUrl.search);
+      const certFingerprint = params.get('certFingerprintSha256') || '';
+      console.log('CERT', certFingerprint);
+      serverConfig = await cordova.plugins.outline.Connection.fetchConfig(
+          `${accessUrl.origin}${accessUrl.pathname}`, certFingerprint);
+      console.log(`SERVER CONFIG ${serverConfig}`);
+    } else {
+      // Expect SHADOWSOCKS_URI.parse to throw on invalid access key; propagate any exception.
+      let shadowsocksConfig = null;
+      try {
+        shadowsocksConfig = SHADOWSOCKS_URI.parse(accessKey);
+      } catch (error) {
+        const message = !!error.message ? error.message : 'Failed to parse access key';
+        throw new errors.ServerUrlInvalid(message);
+      }
+      if (shadowsocksConfig.host.isIPv6) {
+        throw new errors.ServerIncompatible('Only IPv4 addresses are currently supported');
+      }
+      const name = shadowsocksConfig.extra.outline ?
+          this.localize('server-default-name-outline') :
+          shadowsocksConfig.tag.data ? shadowsocksConfig.tag.data :
+                                       this.localize('server-default-name');
+      serverConfig = {
+        host: shadowsocksConfig.host.data,
+        port: shadowsocksConfig.port.data,
+        method: shadowsocksConfig.method.data,
+        password: shadowsocksConfig.password.data,
+        name,
+      };
     }
-    if (shadowsocksConfig.host.isIPv6) {
-      throw new errors.ServerIncompatible('Only IPv4 addresses are currently supported');
-    }
-    const name = shadowsocksConfig.extra.outline ?
-        this.localize('server-default-name-outline') :
-        shadowsocksConfig.tag.data ? shadowsocksConfig.tag.data :
-                                     this.localize('server-default-name');
-    const serverConfig = {
-      host: shadowsocksConfig.host.data,
-      port: shadowsocksConfig.port.data,
-      method: shadowsocksConfig.method.data,
-      password: shadowsocksConfig.password.data,
-      name,
-    };
+
     if (!this.serverRepo.containsServer(serverConfig)) {
       // Only prompt the user to add new servers.
       try {
@@ -529,15 +545,15 @@ export class App {
   }
 
   private registerUrlInterceptionListener(urlInterceptor: UrlInterceptor) {
-    urlInterceptor.registerListener((url) => {
-      if (!url || !unwrapInvite(url).startsWith('ss://')) {
+    urlInterceptor.registerListener(async (url) => {
+      if (!url || !unwrapInvite(url).startsWith('ss://') || !url.startsWith('outline://')) {
         // This check is necessary to ignore empty and malformed install-referrer URLs in Android
         // while allowing ss:// and invite URLs.
         // TODO: Stop receiving install referrer intents so we can remove this.
         return console.debug(`Ignoring intercepted non-shadowsocks url`);
       }
       try {
-        this.confirmAddServer(url);
+        await this.confirmAddServer(url);
       } catch (err) {
         this.showLocalizedErrorInDefaultPage(err);
       }

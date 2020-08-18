@@ -47,6 +47,10 @@ declare namespace cordova.plugins.outline {
 
   // Represents a VPN connection to a remote server.
   class Connection {
+    // Retrieves a proxy configuration by querying `accessUrl`, validating that the TLS certificate
+    // fingerprint matches `certFingerprintSha256`.
+    static fetchConfig(accessUrl: string, certFingerprintSha256: string): Promise<ServerConfig>;
+
     // Creates a new instance with |serverConfig|.
     // A sequential ID will be generated if |id| is absent.
     constructor(serverConfig: ServerConfig, id?: string);

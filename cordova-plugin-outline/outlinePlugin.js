@@ -73,7 +73,24 @@ const ConnectionStatus = {
   RECONNECTING: 2
 }
 
+// TODO(alalama): rename to Tunnel
 class Connection {
+  static fetchConfig(accessUrl, certFingerprintSha256) {
+    if (!accessUrl) {
+      throw new Error('Access URL is required');
+    }
+    if (!certFingerprintSha256) {
+      throw new Error('Certificate SHA256 fingerprint is required');
+    }
+    return new Promise((resolve, reject) => {
+      const rejectWithError = (errorCode) => {
+        reject(new OutlinePluginError(errorCode));
+      };
+      exec(
+          resolve, rejectWithError, PLUGIN_NAME, 'fetchConfig', [accessUrl, certFingerprintSha256]);
+    });
+  }
+
   constructor(config, id) {
     if (id) {
       this.id_ = id.toString();

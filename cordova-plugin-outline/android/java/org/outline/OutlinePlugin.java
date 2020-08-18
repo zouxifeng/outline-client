@@ -24,7 +24,18 @@ import android.content.ServiceConnection;
 import android.net.VpnService;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.util.Pair;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,8 +54,70 @@ import org.outline.log.OutlineLogger;
 import org.outline.shadowsocks.ShadowsocksConnectivity;
 import org.outline.vpn.VpnTunnelService;
 
+// TODO: move this to a separate file
+import java.net.URL;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509TrustManager;
+
 public class OutlinePlugin extends CordovaPlugin {
   private static final Logger LOG = Logger.getLogger(OutlinePlugin.class.getName());
+
+  private static JSONObject fetchConfig(final String accessUrl, final String certFingerprint) {
+    TrustManager[] trustPinnedCert = new TrustManager[] {
+        new X509TrustManager(){public X509Certificate[] getAcceptedIssuers(){return null;
+  }
+
+  @Override
+  public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+    // Not implemented
+  }
+
+  @Override
+  public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+    // TODO(alalama): compute fingerprint and compare against pinned cert
+  }
+}
+}
+;
+HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+  @Override
+  public boolean verify(String hostname, SSLSession session) {
+    return true;
+  }
+};
+LOG.info(String.format("FETCH CONFIG: %s, %s", accessUrl, certFingerprint));
+try {
+  SSLContext context = SSLContext.getInstance("TLS");
+  context.init(null, trustPinnedCert, new java.security.SecureRandom());
+
+  URL url = new URL(accessUrl);
+  HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+  conn.setSSLSocketFactory(context.getSocketFactory());
+  conn.setHostnameVerifier(hostnameVerifier);
+
+  // TODO(alalama): close conn
+  BufferedReader streamReader =
+      new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
+  StringBuilder responseStrBuilder = new StringBuilder();
+
+  String inputStr;
+  while ((inputStr = streamReader.readLine()) != null) {
+    responseStrBuilder.append(inputStr);
+  }
+  return new JSONObject(responseStrBuilder.toString());
+
+} catch (Exception e) {
+  LOG.log(Level.SEVERE, "Failed to fetch config", e);
+}
+
+return null;
+}
 
   // Actions supported by this plugin.
   public enum Action {
@@ -53,6 +126,7 @@ public class OutlinePlugin extends CordovaPlugin {
     ON_STATUS_CHANGE("onStatusChange"),
     IS_RUNNING("isRunning"),
     IS_REACHABLE("isReachable"),
+    FETCH_CONFIG("fetchConfig"),
     INIT_ERROR_REPORTING("initializeErrorReporting"),
     REPORT_EVENTS("reportEvents"),
     QUIT("quitApplication");
@@ -138,18 +212,17 @@ public class OutlinePlugin extends CordovaPlugin {
   private Map<Pair<String, String>, CallbackContext> listeners = new ConcurrentHashMap();
 
   // Class to bind to VpnTunnelService.
-  private ServiceConnection serviceConnection =
-      new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder binder) {
-          vpnTunnelService = ((VpnTunnelService.LocalBinder) binder).getService();
-        }
+  private ServiceConnection serviceConnection = new ServiceConnection() {
+    @Override
+    public void onServiceConnected(ComponentName className, IBinder binder) {
+      vpnTunnelService = ((VpnTunnelService.LocalBinder) binder).getService();
+    }
 
-        @Override
-        public void onServiceDisconnected(ComponentName className) {
-          vpnTunnelService = null;
-        }
-      };
+    @Override
+    public void onServiceDisconnected(ComponentName className) {
+      vpnTunnelService = null;
+    }
+  };
 
   @Override
   protected void pluginInitialize() {
@@ -160,8 +233,8 @@ public class OutlinePlugin extends CordovaPlugin {
     broadcastFilter.addAction(Action.START.value);
     broadcastFilter.addAction(Action.STOP.value);
     broadcastFilter.addAction(Action.ON_STATUS_CHANGE.value);
-    LocalBroadcastManager.getInstance(context)
-        .registerReceiver(vpnTunnelBroadcastReceiver, broadcastFilter);
+    LocalBroadcastManager.getInstance(context).registerReceiver(
+        vpnTunnelBroadcastReceiver, broadcastFilter);
 
     context.bindService(
         new Intent(context, VpnTunnelService.class), serviceConnection, Context.BIND_AUTO_CREATE);
@@ -201,64 +274,68 @@ public class OutlinePlugin extends CordovaPlugin {
   }
 
   // Executes an action asynchronously through the Cordova thread pool.
-  protected void executeAsync(
-      final String connectionId,
-      final String action,
-      final JSONArray args,
+  protected void executeAsync(final String connectionId, final String action, final JSONArray args,
       final CallbackContext callback) {
-    cordova
-        .getThreadPool()
-        .execute(
-            new Runnable() {
-              @Override
-              public void run() {
-                try {
-                  // Connection instance actions
-                  if (Action.START.is(action)) {
-                    // Set instance variables in case we need to start the VPN service from
-                    // onActivityResult
-                    startRequestConnectionId = connectionId;
-                    startRequestConfig = args.getJSONObject(1);
-                    prepareAndStartVpnConnection();
-                  } else if (Action.STOP.is(action)) {
-                    stopVpnConnection(connectionId);
-                  } else if (Action.IS_REACHABLE.is(action)) {
-                    boolean isReachable =
-                        ShadowsocksConnectivity.isServerReachable(
-                            args.getString(1), args.getInt(2));
-                    PluginResult result = new PluginResult(PluginResult.Status.OK, isReachable);
-                    sendPluginResult(connectionId, action, result, false);
-                  } else if (Action.IS_RUNNING.is(action)) {
-                    PluginResult result =
-                        new PluginResult(PluginResult.Status.OK, isConnectionActive(connectionId));
-                    sendPluginResult(connectionId, action, result, false);
+    cordova.getThreadPool().execute(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          // Connection instance actions
+          if (Action.START.is(action)) {
+            // Set instance variables in case we need to start the VPN service from
+            // onActivityResult
+            startRequestConnectionId = connectionId;
+            startRequestConfig = args.getJSONObject(1);
+            prepareAndStartVpnConnection();
+          } else if (Action.STOP.is(action)) {
+            stopVpnConnection(connectionId);
+          } else if (Action.IS_REACHABLE.is(action)) {
+            boolean isReachable =
+                ShadowsocksConnectivity.isServerReachable(args.getString(1), args.getInt(2));
+            PluginResult result = new PluginResult(PluginResult.Status.OK, isReachable);
+            sendPluginResult(connectionId, action, result, false);
+          } else if (Action.IS_RUNNING.is(action)) {
+            PluginResult result =
+                new PluginResult(PluginResult.Status.OK, isConnectionActive(connectionId));
+            sendPluginResult(connectionId, action, result, false);
 
-                    // Static actions
-                  } else if (Action.INIT_ERROR_REPORTING.is(action)) {
-                    final String apiKey = args.getString(0);
-                    OutlineLogger.initializeErrorReporting(getBaseContext(), apiKey);
-                    callback.success();
-                  } else if (Action.REPORT_EVENTS.is(action)) {
-                    final String uuid = args.getString(0);
-                    OutlineLogger.sendLogs(uuid);
-                    callback.success();
-                  } else {
-                    LOG.severe(
-                        String.format(Locale.ROOT, "Unexpected asynchronous action %s", action));
-                    callback.error(ErrorCode.UNEXPECTED.value);
-                  }
-                } catch (Exception e) {
-                  LOG.log(Level.SEVERE, "Unexpected error while executing action.", e);
-                  if (isConnectionInstanceAction(action)) {
-                    PluginResult pluginResult =
-                        new PluginResult(PluginResult.Status.ERROR, ErrorCode.UNEXPECTED.value);
-                    sendPluginResult(connectionId, action, pluginResult, false);
-                  } else {
-                    callback.error(ErrorCode.UNEXPECTED.value);
-                  }
-                }
-              }
-            });
+            // Static actions
+          } else if (Action.INIT_ERROR_REPORTING.is(action)) {
+            final String apiKey = args.getString(0);
+            OutlineLogger.initializeErrorReporting(getBaseContext(), apiKey);
+            callback.success();
+          } else if (Action.REPORT_EVENTS.is(action)) {
+            final String uuid = args.getString(0);
+            OutlineLogger.sendLogs(uuid);
+            callback.success();
+          } else if (Action.FETCH_CONFIG.is(action)) {
+            final String accessUrl = args.getString(0);
+            final String certFingerprint = args.getString(1);
+            LOG.info(String.format("FETCHING CONFIG: %s, %s", accessUrl, certFingerprint));
+            // TODO(alalama): implement!
+            //                            final JSONObject config = new
+            //                            JSONObject("{\"name\":\"Outline
+            //                            Server\",\"password\":\"catiMHi6bZgs\",\"port\":53020,\"method\":\"chacha20-ietf-poly1305\",\"host\":\"10.0.2.2\"}");
+            final JSONObject config = fetchConfig(accessUrl, certFingerprint);
+            LOG.info(String.format("CONFIG: %s", config.toString()));
+            final PluginResult result = new PluginResult(PluginResult.Status.OK, config);
+            callback.sendPluginResult(result);
+          } else {
+            LOG.severe(String.format(Locale.ROOT, "Unexpected asynchronous action %s", action));
+            callback.error(ErrorCode.UNEXPECTED.value);
+          }
+        } catch (Exception e) {
+          LOG.log(Level.SEVERE, "Unexpected error while executing action.", e);
+          if (isConnectionInstanceAction(action)) {
+            PluginResult pluginResult =
+                new PluginResult(PluginResult.Status.ERROR, ErrorCode.UNEXPECTED.value);
+            sendPluginResult(connectionId, action, pluginResult, false);
+          } else {
+            callback.error(ErrorCode.UNEXPECTED.value);
+          }
+        }
+      }
+    });
   }
 
   private void prepareAndStartVpnConnection() {
@@ -395,11 +472,8 @@ public class OutlinePlugin extends CordovaPlugin {
     }
   };
 
-  public void sendPluginResult(
-      final String connectionId,
-      final String action,
-      final PluginResult result,
-      boolean keepCallback) {
+  public void sendPluginResult(final String connectionId, final String action,
+      final PluginResult result, boolean keepCallback) {
     if (connectionId == null || action == null) {
       LOG.warning(String.format(Locale.ROOT,
           "failed to retrieve listener for connection ID %s, action %s", connectionId, action));
