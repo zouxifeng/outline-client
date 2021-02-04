@@ -2,6 +2,8 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "../../www",
+    "target": "es5",
+    "downlevelIteration": true,
     "lib": [
       "dom",
       "es5",
