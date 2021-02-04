@@ -1,7 +1,13 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "outDir": "../../www"
+    "outDir": "../../www",
+    "lib": [
+      "dom",
+      "es5",
+      "es2017",
+      "scripthost"
+    ]
   },
   "include": [
     "**/*.ts"
