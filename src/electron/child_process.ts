@@ -99,11 +99,10 @@ export class ChildProcessHelper {
 function logExit(path: string, exitCode?: number, signal?: string) {
   const processName = basename(path);
   const prefix = `[EXIT - ${processName}]: `;
-  const exitReason = exitCode ?? signal;
-  if (exitReason === exitCode) {
+  if (exitCode !== null) {
     const log = exitCode === 0 ? console.log : console.error;
     log(`${prefix}Exited with code ${exitCode}`);
-  } else if (exitReason === signal) {
+  } else if (signal !== null) {
     const log = signal === 'SIGTERM' ? console.log : console.error;
     log(`${prefix}Killed by signal ${signal}`);
   } else {
