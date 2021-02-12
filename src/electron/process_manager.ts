@@ -210,11 +210,12 @@ class Tun2socks {
     this.process = new ChildProcessHelper(
         pathToEmbeddedBinary('outline-go-tun2socks', 'tun2socks'), this.getProcessArgs());
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       // Declare success when tun2socks is running.
       this.process!.onStderr = (data?: string | Buffer) => {
+        tun2SocksLogsToConsole(data);
         if (data && data.toString().includes('tun2socks running')) {
-          this.process!.onStderr = undefined;
+          this.process!.onStderr = tun2SocksLogsToConsole;
           if (isWindows) {
             powerMonitor.removeAllListeners();
             powerMonitor.once('suspend', this.suspendListener);
@@ -302,10 +303,15 @@ class Tun2socks {
     args.push('-proxyPort', `${this.config.port}`);
     args.push('-proxyPassword', this.config.password || '');
     args.push('-proxyCipher', this.config.method || '');
-    args.push('-logLevel', 'info');
+    args.push('-logLevel', 'debug');
     if (!this.isUdpEnabled) {
       args.push('-dnsFallback');
     }
     return args;
   }
+}
+
+function tun2SocksLogsToConsole(data?: string | Buffer) {
+  if (!data) { return; }
+  console.error(`[STDERR - go-tun2socks]: ${data.toString()}`);
 }

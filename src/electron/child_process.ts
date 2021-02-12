@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import { ChildProcess, spawn } from 'child_process';
+import { basename } from 'path';
 
 // Simple child process launcher. Launches the process on construction.
 //
@@ -45,6 +46,7 @@ export class ChildProcessHelper {
       this.exited = new Promise<number>(resolve => {
         this.resolveExit = resolve;
       });
+      logExit(path, code, signal);
     };
 
     const onStdErr = (data?: string | Buffer) => {
@@ -91,5 +93,22 @@ export class ChildProcessHelper {
 
   get isRunning(): boolean {
     return this.running;
+  }
+}
+
+function logExit(path: string, exitCode?: number, signal?: string) {
+  const processName = basename(path);
+  const prefix = `[EXIT - ${processName}]: `;
+  const exitReason = exitCode ?? signal;
+  if (exitReason === exitCode) {
+    const log = exitCode === 0 ? console.log : console.error;
+    log(`${prefix}Exited with code ${exitCode}`);
+  } else if (exitReason === signal) {
+    const log = signal === 'SIGTERM' ? console.log : console.error;
+    log(`${prefix}Killed by signal ${signal}`);
+  } else {
+    // This should never happen.  It likely signals an internal error in Node, as it is supposed to
+    // always pass either an exit code or an exit signal to the exit handler.
+    console.error(`${prefix}Process exited for an unknown reason.`);
   }
 }
