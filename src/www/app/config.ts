@@ -20,3 +20,54 @@ export interface ShadowsocksConfig {
   method?: string;
   name?: string;
 }
+
+// SIP008 online config
+type Sip008Json = Readonly < {
+  version: number,
+  servers: ReadonlyArray < Readonly < {
+    readonly id: string;
+    readonly remarks: string;
+    readonly server: string;
+    readonly server_port: number;
+    readonly password: string;
+    readonly method: string;
+    readonly plugin: string;
+    readonly plugin_opts: string;
+  }>>,
+}>;
+
+// Parses a SIP008 JSON server configuration into a list of ShadowsocksConfig.
+// See https://github.com/shadowsocks/shadowsocks-org/wiki/SIP008-Online-Configuration-Delivery
+export function sip008JsonToShadowsocksConfig(sip008Json: {}): ShadowsocksConfig[] {
+  const config = sip008Json as Sip008Json;
+  if (config?.version !== 1) {
+    console.warn(`unsupported SIP008 version: ${config.version}`);
+  }
+  const ssConfigs: ShadowsocksConfig[] = [];
+  if (!config?.servers) {
+    return ssConfigs;
+  }
+  for (const serverConfig of config.servers) {
+    try {
+      const ssConfig = {
+        host: serverConfig.server,
+        port: serverConfig.server_port,
+        password: serverConfig.password,
+        method: serverConfig.method,
+        name: serverConfig.remarks,
+      };
+      if (!ssConfig.host || !ssConfig.port || !ssConfig.password || !ssConfig.method) {
+        continue;
+      }
+      if (typeof ssConfig.host !== 'string' || typeof ssConfig.port !== 'number' ||
+          typeof ssConfig.password !== 'string' || typeof ssConfig.method !== 'string') {
+        continue;
+      }
+      ssConfigs.push(ssConfig);
+    } catch (e) {
+      console.warn(`invalid server configuration: ${e}`);
+      continue;
+    }
+  }
+  return ssConfigs;
+}

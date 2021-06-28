@@ -70,6 +70,7 @@ Polymer({
         -webkit-user-select: text; /* Safari */
         -ms-user-select: text; /* IE/Edge */
         user-select: text; /* Chrome */
+        overflow: hidden;
       }
 
       #serverName {

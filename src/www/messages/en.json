@@ -15,6 +15,7 @@
   "disconnecting-server-state": "Disconnecting...",
   "email-feedback-input": "Email address (optional)",
   "error-feedback-submission": "Sorry, we were unable to submit your feedback. Please check that you are connected to the internet and try again.",
+  "error-fetch-config": "We were unable to retrieve your online server configuration: {errorMessage}",
   "error-invalid-access-key": "Invalid access key. Please try again, or submit feedback for help.",
   "error-server-already-added": "Server “{serverName}” already added.",
   "error-server-incompatible": "Sorry, this access key is not compatible with this version of Outline.",

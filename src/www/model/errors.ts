@@ -61,6 +61,12 @@ export class FeedbackSubmissionError extends OutlineError {
   }
 }
 
+export class FetchConfigError extends OutlineError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 // Error thrown by "native" code.
 //
 // Must be kept in sync with its Cordova doppelganger:

@@ -21,6 +21,9 @@ export interface Server {
   // The name of this server, as given by the user.
   name: string;
 
+  // The server host and port.
+  readonly address: string;
+
   // The message identifier corresponding to the server error state. This identifier
   // must match one of the localized app message.
   errorMessageId?: string;

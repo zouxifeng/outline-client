@@ -170,6 +170,9 @@ export class App {
     } else if (e instanceof errors.ShadowsocksUnsupportedCipher) {
       messageKey = 'error-shadowsocks-unsupported-cipher';
       messageParams = ['cipher', e.cipher];
+    } else if (e instanceof errors.FetchConfigError) {
+      messageKey = 'error-fetch-config';
+      messageParams = ['errorMessage', e.message];
     } else {
       messageKey = 'error-unexpected';
     }
@@ -361,6 +364,7 @@ export class App {
     try {
       await server.connect();
       card.state = 'CONNECTED';
+      card.serverAddress = server.address;
       console.log(`connected to server ${serverId}`);
       this.rootEl.showToast(
           this.localize('server-connected', 'serverName', this.getServerDisplayName(server)));
@@ -406,6 +410,7 @@ export class App {
     try {
       await server.disconnect();
       card.state = 'DISCONNECTED';
+      card.serverAddress = server.address;
       console.log(`disconnected from server ${serverId}`);
       this.rootEl.showToast(
           this.localize('server-disconnected', 'serverName', this.getServerDisplayName(server)));

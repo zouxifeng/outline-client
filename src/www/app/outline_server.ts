@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {makeConfig, SHADOWSOCKS_URI, SIP002_URI} from 'ShadowsocksConfig';
+import {ConfigFetchParams, makeConfig, parseOnlineConfigUrl, SHADOWSOCKS_URI, SIP002_URI} from 'ShadowsocksConfig';
 import * as uuidv4 from 'uuidv4';
 
 import * as errors from '../model/errors';
 import * as events from '../model/events';
 import {Server, ServerRepository} from '../model/server';
 
-import {ShadowsocksConfig} from './config';
+import {ShadowsocksConfig, sip008JsonToShadowsocksConfig} from './config';
 import {NativeNetworking} from './net';
 import {Tunnel, TunnelFactory, TunnelStatus} from './tunnel';
 
-export class OutlineServer implements Server {
-  // We restrict to AEAD ciphers because unsafe ciphers are not supported in go-tun2socks.
-  // https://shadowsocks.org/en/spec/AEAD-Ciphers.html
-  private static readonly SUPPORTED_CIPHERS =
-      ['chacha20-ietf-poly1305', 'aes-128-gcm', 'aes-192-gcm', 'aes-256-gcm'];
+export interface OutlineServer extends Server {
+  readonly accessKey: string;
+  readonly address: string;
+  readonly isOutlineServer: boolean;
+}
 
+class StaticOutlineServer implements OutlineServer {
   errorMessageId?: string;
   private config: ShadowsocksConfig;
 
@@ -37,24 +38,7 @@ export class OutlineServer implements Server {
       private tunnel: Tunnel, private net: NativeNetworking,
       private eventQueue: events.EventQueue) {
     this.config = accessKeyToShadowsocksConfig(accessKey);
-    this.tunnel.onStatusChange((status: TunnelStatus) => {
-      let statusEvent: events.OutlineEvent;
-      switch (status) {
-        case TunnelStatus.CONNECTED:
-          statusEvent = new events.ServerConnected(this);
-          break;
-        case TunnelStatus.DISCONNECTED:
-          statusEvent = new events.ServerDisconnected(this);
-          break;
-        case TunnelStatus.RECONNECTING:
-          statusEvent = new events.ServerReconnecting(this);
-          break;
-        default:
-          console.warn(`Received unknown tunnel status ${status}`);
-          return;
-      }
-      eventQueue.enqueue(statusEvent);
-    });
+    setTunnelStatusChangeListener(this, tunnel, eventQueue);
   }
 
   get name() {
@@ -71,7 +55,7 @@ export class OutlineServer implements Server {
   }
 
   get isOutlineServer() {
-    return this.accessKey.includes('outline=1');
+    return isOutlineAccessKey(this.accessKey);
   }
 
   async connect() {
@@ -103,10 +87,130 @@ export class OutlineServer implements Server {
   checkReachable(): Promise<boolean> {
     return this.net.isServerReachable(this.config.host, this.config.port);
   }
+}
 
-  static isServerCipherSupported(cipher?: string) {
-    return cipher !== undefined && OutlineServer.SUPPORTED_CIPHERS.includes(cipher);
+class DynamicOutlineServer implements OutlineServer {
+  private config?: ShadowsocksConfig;
+
+  constructor(
+      public readonly id: string, public accessKey: string, private _name: string,
+      private tunnel: Tunnel, private net: NativeNetworking,
+      private eventQueue: events.EventQueue) {
+    setTunnelStatusChangeListener(this, tunnel, eventQueue);
   }
+
+  get name() {
+    return this._name;
+  }
+
+  set name(newName: string) {
+    this._name = newName;
+    if (this.config) {
+      this.config.name = newName;
+    }
+  }
+
+  get address() {
+    return this.config ? `${this.config.host}:${this.config.port}` : this.accessKey;
+  }
+
+  get isOutlineServer() {
+    return isOutlineAccessKey(this.accessKey);
+  }
+
+  async connect() {
+    try {
+      this.config = await this.fetchConfig();
+      this.config.name = this.name;
+    } catch (e) {
+      throw new errors.FetchConfigError(e.message);
+    }
+    try {
+      await this.tunnel.start(this.config);
+    } catch (e) {
+      // e originates in "native" code: either Cordova or Electron's main process.
+      // Because of this, we cannot assume "instanceof OutlinePluginError" will work.
+      if (e.errorCode) {
+        throw errors.fromErrorCode(e.errorCode);
+      }
+      throw e;
+    }
+  }
+
+  private async fetchConfig(): Promise<ShadowsocksConfig> {
+    const req = dynamicAccessKeyToConfigFetchParams(this.accessKey);
+    const res = await fetch(req.location);
+    console.debug(`fetch online config, http status: ${res.status}`);
+    if (!res.ok) {
+      console.error(`failed to fetch config with status code ${res.status}`);
+      throw new Error(`HTTP status code ${res.status}`);
+    }
+    const configs = sip008JsonToShadowsocksConfig(await res.json());
+    const validConfigs = configs.filter((config: ShadowsocksConfig) => {
+      try {
+        validateAccessKey(shadowsocksConfigToAccessKey(config));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    });
+    if (validConfigs.length === 0) {
+      throw new Error('invalid online config');
+    }
+    // TODO(alalama): handle multiple configs
+    return validConfigs[0];
+  }
+
+  async disconnect() {
+    try {
+      await this.tunnel.stop();
+      delete this.config;
+    } catch (e) {
+      // All the plugins treat disconnection errors as ErrorCode.UNEXPECTED.
+      throw new errors.RegularNativeError();
+    }
+  }
+
+  async checkRunning(): Promise<boolean> {
+    if (!this.config) {
+      return false;
+    }
+    return this.tunnel.isRunning();
+  }
+
+  async checkReachable(): Promise<boolean> {
+    if (this.config) {
+      return this.net.isServerReachable(this.config.host, this.config.port);
+    }
+    // Reachability check is only relevant if the server is connected.
+    return true;
+  }
+}
+
+function setTunnelStatusChangeListener(
+    server: OutlineServer, tunnel: Tunnel, eventQueue: events.EventQueue) {
+  tunnel.onStatusChange((status: TunnelStatus) => {
+    let statusEvent: events.OutlineEvent;
+    switch (status) {
+      case TunnelStatus.CONNECTED:
+        statusEvent = new events.ServerConnected(server);
+        break;
+      case TunnelStatus.DISCONNECTED:
+        statusEvent = new events.ServerDisconnected(server);
+        break;
+      case TunnelStatus.RECONNECTING:
+        statusEvent = new events.ServerReconnecting(server);
+        break;
+      default:
+        console.warn(`Received unknown tunnel status ${status}`);
+        return;
+    }
+    eventQueue.enqueue(statusEvent);
+  });
+}
+
+function isOutlineAccessKey(accessKey: string): boolean {
+  return accessKey.includes('outline=1');
 }
 
 // DEPRECATED: V0 server persistence format.
@@ -146,8 +250,11 @@ export class OutlineServerRepository implements ServerRepository {
   }
 
   add(accessKey: string) {
-    const config = accessKeyToShadowsocksConfig(accessKey);
-    const server = this.createServer(uuidv4(), accessKey, config.name);
+    let name: string;
+    if (isStaticAccessKey(accessKey)) {
+      name = accessKeyToShadowsocksConfig(accessKey).name;
+    }
+    const server = this.createServer(uuidv4(), accessKey, name);
     this.serverById.set(server.id, server);
     this.storeServers();
     this.eventQueue.enqueue(new events.ServerAdded(server));
@@ -195,18 +302,7 @@ export class OutlineServerRepository implements ServerRepository {
     if (alreadyAddedServer) {
       throw new errors.ServerAlreadyAdded(alreadyAddedServer);
     }
-    let config = null;
-    try {
-      config = SHADOWSOCKS_URI.parse(accessKey);
-    } catch (error) {
-      throw new errors.ServerUrlInvalid(error.message || 'failed to parse access key');
-    }
-    if (config.host.isIPv6) {
-      throw new errors.ServerIncompatible('unsupported IPv6 host address');
-    }
-    if (!OutlineServer.isServerCipherSupported(config.method.data)) {
-      throw new errors.ShadowsocksUnsupportedCipher(config.method.data || 'unknown');
-    }
+    validateAccessKey(accessKey);
   }
 
   private serverFromAccessKey(accessKey: string): OutlineServer|undefined {
@@ -294,9 +390,15 @@ export class OutlineServerRepository implements ServerRepository {
     this.serverById.set(serverJson.id, server);
   }
 
-  private createServer(id: string, accessKey: string, name: string): OutlineServer {
-    const server =
-        new OutlineServer(id, accessKey, name, this.createTunnel(id), this.net, this.eventQueue);
+  private createServer(id: string, accessKey: string, name: string) {
+    let server: OutlineServer;
+    if (isStaticAccessKey(accessKey)) {
+      server = new StaticOutlineServer(
+          id, accessKey, name, this.createTunnel(id), this.net, this.eventQueue);
+    } else {
+      server = new DynamicOutlineServer(
+          id, accessKey, name, this.createTunnel(id), this.net, this.eventQueue);
+    }
     try {
       this.validateAccessKey(accessKey);
     } catch (e) {
@@ -327,7 +429,7 @@ export function accessKeyToShadowsocksConfig(accessKey: string): ShadowsocksConf
   }
 }
 
-// Enccodes a Shadowsocks proxy configuration into an access key string.
+// Encodes a Shadowsocks proxy configuration into an access key string.
 export function shadowsocksConfigToAccessKey(config: ShadowsocksConfig): string {
   return SIP002_URI.stringify(makeConfig({
     host: config.host,
@@ -340,6 +442,12 @@ export function shadowsocksConfigToAccessKey(config: ShadowsocksConfig): string 
 
 // Compares access keys proxying parameters.
 function accessKeysMatch(a: string, b: string): boolean {
+  if (a === b) {
+    // Compare access keys lexicographically first. This is necessary to match
+    // dynamic access keys. We compare proxying parameters for static access
+    // keys that fail this check.
+    return true;
+  }
   try {
     const l = accessKeyToShadowsocksConfig(a);
     const r = accessKeyToShadowsocksConfig(b);
@@ -349,4 +457,50 @@ function accessKeysMatch(a: string, b: string): boolean {
     console.debug(`failed to parse access key for comparison`);
   }
   return false;
+}
+
+function validateAccessKey(accessKey: string) {
+  if (isDynamicAccessKey(accessKey)) {
+    dynamicAccessKeyToConfigFetchParams(accessKey);
+    return;
+  }
+  // Assume we're validating an ss:// access key.
+  let config = null;
+  try {
+    config = SHADOWSOCKS_URI.parse(accessKey);
+  } catch (error) {
+    throw new errors.ServerUrlInvalid(error.message || 'failed to parse access key');
+  }
+  if (config.host.isIPv6) {
+    throw new errors.ServerIncompatible('unsupported IPv6 host address');
+  }
+  if (!isServerCipherSupported(config.method.data)) {
+    throw new errors.ShadowsocksUnsupportedCipher(config.method.data || 'unknown');
+  }
+}
+
+function isStaticAccessKey(accessKey: string) {
+  return accessKey.startsWith('ss://');
+}
+
+function isDynamicAccessKey(accessKey: string) {
+  return accessKey.startsWith('https://') || accessKey.startsWith('ssconf://');
+}
+
+function dynamicAccessKeyToConfigFetchParams(accessKey: string): ConfigFetchParams {
+  if (accessKey.startsWith('https://')) {
+    return {
+      location: accessKey,
+      httpMethod: 'GET',
+    };
+  }
+  return parseOnlineConfigUrl(accessKey);
+}
+
+// We restrict to AEAD ciphers because unsafe ciphers are not supported in go-tun2socks.
+// https://shadowsocks.org/en/spec/AEAD-Ciphers.html
+const SUPPORTED_CIPHERS = ['chacha20-ietf-poly1305', 'aes-128-gcm', 'aes-192-gcm', 'aes-256-gcm'];
+
+function isServerCipherSupported(cipher?: string) {
+  return cipher !== undefined && SUPPORTED_CIPHERS.includes(cipher);
 }
