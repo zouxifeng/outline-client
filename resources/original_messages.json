@@ -376,10 +376,10 @@
     "description": "An error message shown when the user is trying to send feedback to the application developers but it is failing."
   },
   "error_fetch_config": {
-    "message": "We were unable to retrieve your online server configuration: $ERROR_MESAGE$",
+    "message": "We were unable to retrieve your online server configuration: $ERROR_MESSAGE$",
     "description": "An error message shown when there is a problem retrieving a server configuration from the internet.",
     "placeholders": {
-      "ERROR_MESAGE": {
+      "ERROR_MESSAGE": {
         "content": "{errorMessage}",
         "example": "HTTP error code 404"
       }
