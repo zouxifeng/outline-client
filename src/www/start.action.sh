@@ -16,10 +16,6 @@
 
 set -eu
 
-npm run action src/www/build_cordova
-
 webpack-dev-server \
-    --static-serve-index \
     --config=src/www/cordova.webpack.js \
-    --static "www" \
-    --open
+    --open /cordova_index.html
