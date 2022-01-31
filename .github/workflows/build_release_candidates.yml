@@ -37,3 +37,43 @@ jobs:
           name: client_linux_release_${{ github.sha }}
           path: build/dist
           if-no-files-found: error
+  android:
+    name: Build Android Release Candidate
+    runs-on: ubuntu-20.04
+    timeout-minutes: 15
+    environment: Client Android Release
+    env:
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+
+      - name: Install Node
+        uses: actions/setup-node@v2.2.0
+        with:
+          node-version: 16
+
+      - name: Install NPM Dependencies
+        run: npm ci
+
+      - name: Install Java
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: 1.8
+
+      - name: Setup Android
+        run: bash ./tools/build/setup_linux_android.sh
+
+      - name: Build Android Release Candidate
+        run: |
+          openssl aes-256-cbc -K ${{ secrets.encrypted_cb15c65d6aeb_key }} -iv ${{ secrets.encrypted_cb15c65d6aeb_iv }} -in keystore.p12.enc -out keystore.p12 -d
+          npm run action gulp build android --buildMode=release --KEYSTORE=keystore.p12 --KEYALIAS=${{ secrets.KEY_ALIAS }} --STOREPASS=${{ secrets.KEY_STORE_PASSWORD }} --KEYPASS=${{ secrets.KEY_PASSWORD }}
+
+
+      - name: Upload Android Release Candidate
+        uses: actions/upload-artifact@v2
+        with:
+          name: client_android_release_${{ github.sha }}
+          path: platforms/android/app/build/outputs
+          if-no-files-found: error
+
