@@ -27,8 +27,8 @@ EOM
 exit 1
 }
 
-PLATFORM=ios
-BUILD_MODE=
+PLATFORM=$1
+BUILD_MODE=debug
 for i in "$@"; do
     case $i in
     --buildMode=*)
@@ -46,10 +46,11 @@ done
 PLATFORM_DIR=platforms/$PLATFORM/
 if [ ! -d $PLATFORM_DIR ]; then
   # Generate the Xcode project through Cordova.
-  npm run action gulp -- setup $PLATFORM --buildMode=$BUILD_MODE
+  npm run action gulp setup $PLATFORM -- --buildMode=$BUILD_MODE
 fi
 
 # Install the fastlane scripts and metadata.
-cp -R apple/fastlane/* $PLATFORM_DIR
-pushd $PLATFORM_DIR
 bundle install
+
+cp -R "fastlane" "${PLATFORM_DIR}"
+pushd "${PLATFORM_DIR}"

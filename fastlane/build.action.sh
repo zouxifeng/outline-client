@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Copyright 2018 The Outline Authors
 #
@@ -13,6 +13,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-set -eux
+set -eu
 
-docker build -t quay.io/outline/build-android tools/build
+PLATFORM=$1
+BUILD_MODE=debug
+for i in "$@"; do
+    case $i in
+    --buildMode=*)
+        BUILD_MODE="${i#*=}"
+        shift
+        ;;
+    -* | --*)
+        echo "Unknown option: ${i}"
+        exit 1
+        ;;
+    *) ;;
+    esac
+done
+
+bash ./scripts/install_fastlane.sh "${PLATFORM}" --buildMode="${BUILD_MODE}"
+cd "platforms/${PLATFORM}"
+bundle exec fastlane "${PLATFORM}" "${BUILD_MODE}"

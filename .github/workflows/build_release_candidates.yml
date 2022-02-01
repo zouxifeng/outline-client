@@ -63,17 +63,21 @@ jobs:
 
       - name: Setup Android
         run: bash ./tools/build/setup_linux_android.sh
+        
+      # - name: Install Homebrew
+      #   run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    
+      - name: Install RubyGems
+        run: |
+          sudo apt-get install rubygems
+          sudo gem install bundler
 
       - name: Build Android Release Candidate
-        run: |
-          openssl aes-256-cbc -K ${{ secrets.encrypted_cb15c65d6aeb_key }} -iv ${{ secrets.encrypted_cb15c65d6aeb_iv }} -in keystore.p12.enc -out keystore.p12 -d
-          npm run action gulp build android --buildMode=release --KEYSTORE=keystore.p12 --KEYALIAS=${{ secrets.KEY_ALIAS }} --STOREPASS=${{ secrets.KEY_STORE_PASSWORD }} --KEYPASS=${{ secrets.KEY_PASSWORD }}
+        run: npm run action fastlane/build -- --buildMode=release
 
-
-      - name: Upload Android Release Candidate
-        uses: actions/upload-artifact@v2
-        with:
-          name: client_android_release_${{ github.sha }}
-          path: platforms/android/app/build/outputs
-          if-no-files-found: error
-
+      # - name: Upload Android Release Candidate
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: client_android_release_${{ github.sha }}
+      #     path: platforms/android/app/build/outputs
+      #     if-no-files-found: error

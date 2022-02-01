@@ -23,3 +23,9 @@ end
 for_platform :osx do
   app_identifier "org.outline.macos.client"
 end
+
+# TODO: json_key_file "/path/to/your/downloaded/key.json"
+
+for_platform :android do
+  app_identifier "org.outline.android.client"
+end

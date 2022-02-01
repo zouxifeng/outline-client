@@ -28,7 +28,7 @@ The latter command will open a browser instance running the app. Browser platfor
 
 UI components are located in [src/www/ui_components](src/www/ui_components). The app logic is located in [src/www/app](src/www/app).
 
-*Tip: Build with `(export BUILD_ENV=development; npm run action gulp -- build browser)` to enable source maps.*
+*Tip: Build with `(export BUILD_ENV=development; npm run action gulp build browser)` to enable source maps.*
 
 ## Building the Android app
 
@@ -62,7 +62,7 @@ To learn more about developing for Android, see [docs/android-development](docs/
 A Docker image with all pre-requisites for Android builds is included.  To build:
 
 * Install dependencies with `./tools/build/build.sh npm ci`
-* Then build with `./tools/build/build.sh npm run action gulp -- build android`
+* Then build with `./tools/build/build.sh npm run action gulp build android`
   
 ## Apple (macOS and iOS)
 
